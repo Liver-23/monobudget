@@ -48,7 +48,10 @@ class Amount(val value: Long, val currency: Currency) {
         fun fromYnabAmount(
             ynabAmount: Long,
             currency: Currency,
-        ) = Amount(ynabAmount / (YNAB_MILLI_MILTIPLIER / (10.0.pow(currency.defaultFractionDigits).toInt())), currency)
+        ) = Amount(
+            ynabAmount / (YNAB_MILLI_MILTIPLIER / (10.0.pow(currency.defaultFractionDigits).toInt())),
+            currency,
+        )
 
         fun fromLunchmoneyAmount(
             lunchmoneyAmount: Double,

@@ -10,6 +10,7 @@ import io.github.smaugfm.monobudget.common.util.MCCRegistry
 import io.github.smaugfm.monobudget.common.util.replaceNewLines
 import io.github.smaugfm.monobudget.ynab.model.YnabCleared
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
+import io.github.smaugfm.monobudget.common.model.financial.Amount
 import org.koin.core.annotation.Single
 import java.util.Currency
 

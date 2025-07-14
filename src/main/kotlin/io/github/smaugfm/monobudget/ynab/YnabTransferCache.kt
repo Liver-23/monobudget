@@ -6,6 +6,6 @@ import org.koin.core.annotation.Single
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
-@Single
+@Single(binds = [TransferCache::class])
 class YnabTransferCache(expirationDuration: Duration = 1.minutes) :
     TransferCache.Expiring<YnabTransactionDetail>(expirationDuration)
