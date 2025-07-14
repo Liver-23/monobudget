@@ -24,12 +24,13 @@ class YnabTransactionMessageFormatter(
     ): String {
         with(statementItem) {
             val category = categoryService.budgetedCategoryById(transaction.categoryId)
+            val ynabAmount = Amount.fromYnabAmount(transaction.amount, accountCurrency)
 
             return formatHTMLStatementMessage(
                 "YNAB",
                 (description ?: "").replaceNewLines(),
                 (MCCRegistry.map[mcc]?.fullDescription ?: "Невідомий MCC") + " ($mcc)",
-                "$amount${(if (accountCurrency != currency) " ($operationAmount)" else "")}",
+                ynabAmount.format(),
                 category,
                 transaction.payeeName ?: "",
                 transaction.id,

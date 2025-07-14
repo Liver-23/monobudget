@@ -38,7 +38,7 @@ class Amount(val value: Long, val currency: Currency) {
      * Monobank amount uses minimum currency units (e.g. cents for dollars)
      * and YNAB amount uses milli units (1/1000th of a dollar)
      */
-    fun toYnabAmountLong() = value * (YNAB_MILLI_MILTIPLIER / currency.defaultFractionDigits)
+    fun toYnabAmountLong() = value * (YNAB_MILLI_MILTIPLIER / multiplier)
 
     fun toLunchmoneyAmountBigDecimal() =
         value.toBigDecimal().setScale(currency.defaultFractionDigits) /
@@ -48,7 +48,7 @@ class Amount(val value: Long, val currency: Currency) {
         fun fromYnabAmount(
             ynabAmount: Long,
             currency: Currency,
-        ) = Amount(ynabAmount / (YNAB_MILLI_MILTIPLIER / currency.defaultFractionDigits), currency)
+        ) = Amount(ynabAmount / (YNAB_MILLI_MILTIPLIER / (10.0.pow(currency.defaultFractionDigits).toInt())), currency)
 
         fun fromLunchmoneyAmount(
             lunchmoneyAmount: Double,

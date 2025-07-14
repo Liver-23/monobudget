@@ -35,7 +35,7 @@ class YnabNewTransactionFactory(
                 date = time.toLocalDateTime().date,
                 amount = amount.toYnabAmountLong(),
                 payeeId = null,
-                payeeName = suggestedPayee,
+                payeeName = suggestedPayee ?: description,
                 categoryId = getCategoryId(statement),
                 memo = formatDescription(),
                 cleared = YnabCleared.Cleared,
