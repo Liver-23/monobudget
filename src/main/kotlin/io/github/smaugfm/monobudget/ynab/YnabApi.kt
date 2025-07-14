@@ -83,7 +83,7 @@ class YnabApi(backend: YNAB) {
         catching(this::getBudget) {
             httpClient.get(buildUrl("budgets", budgetId))
                 .body<YnabBudgetDetailResponseShort>()
-        }.data
+        }.data.budget
 
     suspend fun getAccount(accountId: String): YnabAccount =
         catching(this::getAccount) {
