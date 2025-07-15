@@ -36,7 +36,9 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.util.url
 import org.koin.core.annotation.Single
 import kotlin.reflect.KFunction
-import io.ktor.utils.io.jvm.javaio.toInputStream
+import io.ktor.utils.io.core.readText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 private val log = KotlinLogging.logger { }
 
@@ -98,7 +100,9 @@ class YnabApi(backend: YNAB) {
             // Try to log the raw response body for debugging
             try {
                 val response: HttpResponse = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-                val rawBody = response.content.toInputStream().bufferedReader().use { it.readText() }
+                val rawBody = withContext(Dispatchers.IO) {
+                    response.content.readRemaining().readText()
+                }
                 log.error { "Failed to deserialize YnabAccountResponse. Raw response: $rawBody" }
             } catch (ex: Exception) {
                 log.error { "Failed to fetch raw response body from YNAB API: ${ex.message}" }
