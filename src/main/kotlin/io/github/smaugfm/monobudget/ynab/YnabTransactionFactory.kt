@@ -40,9 +40,10 @@ class YnabTransactionFactory(
                 "Existing YnabTransactionDetail: $existingTransaction"
         }
 
+        val ynabAccountId = bankAccounts.getBudgetAccountId(statement.accountId)!!
         val transferPayeeId =
-            transferPayeeIdsCache.getOrPut(bankAccounts.getBudgetAccountId(statement.accountId)!!) {
-                api.getAccount(statement.accountId).transferPayeeId
+            transferPayeeIdsCache.getOrPut(ynabAccountId) {
+                api.getAccount(ynabAccountId).transferPayeeId
             }
 
         val existingTransactionUpdated =
