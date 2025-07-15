@@ -20,6 +20,8 @@ import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.call.call
+import io.ktor.client.call.readText
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -95,7 +97,7 @@ class YnabApi(backend: YNAB) {
             // Try to log the raw response body for debugging
             try {
                 val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-                val rawBody = response.receive<String>()
+                val rawBody = response.call.response.readText()
                 log.error { "Failed to deserialize YnabAccountResponse. Raw response: $rawBody" }
             } catch (ex: Exception) {
                 log.error { "Failed to fetch raw response body from YNAB API: ${ex.message}" }
