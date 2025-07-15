@@ -49,7 +49,7 @@ class MonoWebhookListener : StatementSource, KoinComponent {
                 try {
                     api.setupWebhook(settings.monoWebhookUrl, settings.webhookPort)
                 } catch (e: Exception) {
-                    logExceptionDetails(e)
+                    logExceptionDetails(e, "Webhook Setup")
                     log.error(e) { "Failed to set up webhook for account ${api.accountId} (${api.alias})" }
                     failures.add("${api.accountId} (${api.alias})")
                 }
@@ -62,24 +62,7 @@ class MonoWebhookListener : StatementSource, KoinComponent {
         }
     }
 
-    private fun logExceptionDetails(e: Exception) {
-        log.error { "Exception class: ${e::class.qualifiedName}" }
-        log.error { "Exception toString(): $e" }
-        log.error { "Exception message: ${e.message}" }
-        log.error { "Exception cause: ${e.cause}" }
-        log.error { "Exception stackTrace: ${e.stackTraceToString()}" }
 
-        e::class.members
-            .filter { it.parameters.size == 1 }
-            .forEach { member ->
-                try {
-                    val value = member.call(e)
-                    log.error { "Property ${member.name}: $value" }
-                } catch (ex: Exception) {
-                    log.error { "Property ${member.name}: <unavailable> (${ex.message})" }
-                }
-            }
-    }
 
     override suspend fun statements(): Flow<StatementProcessingContext> {
         val (_, monoWebhookUrl, webhookPort) = settings

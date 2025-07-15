@@ -39,6 +39,9 @@ class CsvMonoInstantSerializer : KSerializer<Instant> {
         encoder: Encoder,
         value: Instant,
     ) {
-        TODO("Not yet implemented")
+        val localDateTime = value.toLocalDateTime(TimeZone.currentSystemDefault())
+        val dateStr = localDateTime.date.format(dateFormat)
+        val timeStr = localDateTime.time.toString()
+        encoder.encodeString("$dateStr $timeStr")
     }
 }

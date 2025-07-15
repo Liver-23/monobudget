@@ -16,7 +16,6 @@ open class TestBase : KoinTest {
     open fun testKoinApplication(app: KoinApplication) {
     }
 
-    @Suppress("unused")
     @JvmField
     @RegisterExtension
     val koinTestExtension =
