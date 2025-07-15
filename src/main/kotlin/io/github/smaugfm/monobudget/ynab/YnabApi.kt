@@ -89,7 +89,7 @@ class YnabApi(backend: YNAB) {
     suspend fun getAccount(accountId: String): YnabAccount =
         catching(this::getAccount) {
             val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-            val rawBody = response.bodyAsText()
+            val rawBody = response.body<String>()
             log.debug { "Raw YNAB getAccount response: $rawBody" }
             kotlinx.serialization.json.Json.decodeFromString<YnabAccountResponse>(rawBody).data.account
         }
