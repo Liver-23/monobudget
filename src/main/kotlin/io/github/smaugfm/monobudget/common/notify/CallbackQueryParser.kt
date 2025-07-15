@@ -4,7 +4,6 @@ import com.elbekd.bot.types.CallbackQuery
 import com.elbekd.bot.types.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
-import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.MakePayee
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Unapprove
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Uncategorize
@@ -53,10 +52,11 @@ class CallbackQueryParser {
             Uncategorize::class -> Uncategorize(transactionId)
             Unapprove::class -> Unapprove(transactionId)
             MakePayee::class -> MakePayee(transactionId, payee)
-            UpdateCategory::class -> UpdateCategory(
-                transactionId,
-                UpdateCategory.extractCategoryIdFromCallbackData(callbackData),
-            )
+            UpdateCategory::class ->
+                UpdateCategory(
+                    transactionId,
+                    UpdateCategory.extractCategoryIdFromCallbackData(callbackData),
+                )
             else -> throw IllegalArgumentException(
                 "Unknown class CallbackType: ${cls?.simpleName}",
             )
@@ -67,4 +67,4 @@ class CallbackQueryParser {
         val updateType: CallbackType,
         val message: Message,
     )
-} 
+}

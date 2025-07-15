@@ -5,8 +5,8 @@ import io.github.smaugfm.monobank.model.MonoWebhookResponse
 import io.github.smaugfm.monobudget.common.statement.StatementSource
 import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementProcessingContext
 import io.github.smaugfm.monobudget.common.util.injectAll
-import io.github.smaugfm.monobudget.common.util.makeJson
 import io.github.smaugfm.monobudget.common.util.logExceptionDetails
+import io.github.smaugfm.monobudget.common.util.makeJson
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.serialization
@@ -62,8 +62,6 @@ class MonoWebhookListener : StatementSource, KoinComponent {
             log.info { "Skipping mono webhook setup." }
         }
     }
-
-
 
     override suspend fun statements(): Flow<StatementProcessingContext> {
         val (_, monoWebhookUrl, webhookPort) = settings

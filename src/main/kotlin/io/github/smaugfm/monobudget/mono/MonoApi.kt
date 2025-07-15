@@ -63,15 +63,21 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
                 return
             } catch (e: Throwable) {
                 val is429 =
-                    (e::class.simpleName == "MonoApiResponseError" &&
-                        (e.message?.contains("429") == true ||
-                         e.message?.contains("Too many requests", ignoreCase = true) == true)) ||
-                    (e.message?.contains("429") == true ||
-                     e.message?.contains("Too many requests", ignoreCase = true) == true)
+                    (
+                        e::class.simpleName == "MonoApiResponseError" &&
+                            (
+                                e.message?.contains("429") == true ||
+                                    e.message?.contains("Too many requests", ignoreCase = true) == true
+                            )
+                    ) ||
+                        (
+                            e.message?.contains("429") == true ||
+                                e.message?.contains("Too many requests", ignoreCase = true) == true
+                        )
                 if (is429 && attempt < MAX_RETRY_ATTEMPTS - 1) {
                     log.warn {
                         "Received 429 Too Many Requests from Monobank API. " +
-                        "Retrying in ${delayMs}ms (attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS)..."
+                            "Retrying in ${delayMs}ms (attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS)..."
                     }
                     kotlinx.coroutines.delay(delayMs)
                     delayMs *= RETRY_BACKOFF_MULTIPLIER

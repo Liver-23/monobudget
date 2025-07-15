@@ -1,14 +1,17 @@
 package io.github.smaugfm.monobudget.common.util
 
 import io.github.oshai.kotlinlogging.KLogger
-import io.ktor.client.plugins.ResponseException
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.plugins.ResponseException
 
 private val log = KotlinLogging.logger {}
 
-fun logExceptionDetails(e: Exception, context: String = "") {
+fun logExceptionDetails(
+    e: Exception,
+    context: String = "",
+) {
     val prefix = if (context.isNotEmpty()) "[$context] " else ""
-    
+
     log.error { "${prefix}Exception class: ${e::class.qualifiedName}" }
     log.error { "${prefix}Exception toString(): $e" }
     log.error { "${prefix}Exception message: ${e.message}" }

@@ -12,15 +12,10 @@ import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
-import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.MakePayee
-import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Unapprove
-import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Uncategorize
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.UpdateCategory
 import io.github.smaugfm.monobudget.common.model.settings.MultipleAccountSettings
 import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementEvents
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
-import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.extractPayee
-import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.extractTransactionId
 import io.github.smaugfm.monobudget.common.util.isEven
 import io.github.smaugfm.monobudget.common.util.isOdd
 import org.koin.core.component.KoinComponent
@@ -86,13 +81,15 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
     private fun categoriesInlineKeyboard(
         categoryIdToNameList: List<Pair<String, String>>,
     ): InlineKeyboardMarkup {
-        val buttons = categoryIdToNameList
-            .map { (id, name) -> UpdateCategory.button(id, name) }
-        val rows = buttons
-            .zipWithNext()
-            .map { it.toList() }
-            .filterIndexed { i, _ -> i.isEven() }
-            .toMutableList()
+        val buttons =
+            categoryIdToNameList
+                .map { (id, name) -> UpdateCategory.button(id, name) }
+        val rows =
+            buttons
+                .zipWithNext()
+                .map { it.toList() }
+                .filterIndexed { i, _ -> i.isEven() }
+                .toMutableList()
         if (buttons.size.isOdd()) {
             rows.add(listOf(buttons.last()))
         }
