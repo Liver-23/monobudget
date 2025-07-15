@@ -95,7 +95,7 @@ class YnabApi(backend: YNAB) {
             // Try to log the raw response body for debugging
             try {
                 val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-                val rawBody = response.bodyAsText()
+                val rawBody = response.receive<String>()
                 log.error { "Failed to deserialize YnabAccountResponse. Raw response: $rawBody" }
             } catch (ex: Exception) {
                 log.error { "Failed to fetch raw response body from YNAB API: ${ex.message}" }
