@@ -60,7 +60,7 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
             try {
                 api.setClientWebhook(url.toString()).awaitSingleOrNull()
                 return
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 val is429 =
                     (e::class.simpleName == "MonoApiResponseError" &&
                         (e.message?.contains("429") == true ||
