@@ -48,7 +48,26 @@ class MonoWebhookListener : StatementSource, KoinComponent {
             monoApis.forEach { api ->
                 try {
                     api.setupWebhook(settings.monoWebhookUrl, settings.webhookPort)
-                } catch (e: Throwable) {
+                } catch (e: Exception) {
+                    // Debug: Log all available properties and class info
+                    log.error { "Exception class: ${e::class.qualifiedName}" }
+                    log.error { "Exception toString(): $e" }
+                    log.error { "Exception message: ${e.message}" }
+                    log.error { "Exception cause: ${e.cause}" }
+                    log.error { "Exception stackTrace: ${e.stackTraceToString()}" }
+
+                    // Try to use reflection to print all properties (for Kotlin exceptions)
+                    e::class.members
+                        .filter { it.parameters.size == 1 } // Only properties, not functions with args
+                        .forEach { member ->
+                            try {
+                                val value = member.call(e)
+                                log.error { "Property ${member.name}: $value" }
+                            } catch (ex: Exception) {
+                                log.error { "Property ${member.name}: <unavailable> (${ex.message})" }
+                            }
+                        }
+
                     log.error(e) { "Failed to set up webhook for account ${api.accountId} (${api.alias})" }
                     failures.add("${api.accountId} (${api.alias})")
                 }
