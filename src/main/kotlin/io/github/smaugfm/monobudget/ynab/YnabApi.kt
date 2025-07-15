@@ -54,7 +54,7 @@ class YnabApi(backend: YNAB) {
     private fun buildUrl(vararg path: String): String =
         url {
             protocol = URLProtocol.HTTPS
-            host = "api.youneedabudget.com"
+            host = "api.ynab.com"
             parameters.append("access_token", token)
             path("v1", *path)
         }
@@ -87,7 +87,9 @@ class YnabApi(backend: YNAB) {
 
     suspend fun getAccount(accountId: String): YnabAccount =
         catching(this::getAccount) {
-            val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
+            val url = buildUrl("budgets", budgetId, "accounts", accountId)
+            log.debug { "YNAB getAccount request URL: $url" }
+            val response = httpClient.get(url)
             val rawBody = response.body<String>()
             log.debug { "Raw YNAB getAccount response: $rawBody" }
             kotlinx.serialization.json.Json.decodeFromString<YnabAccountResponse>(rawBody).data.account
