@@ -6,6 +6,7 @@ import io.github.smaugfm.monobudget.common.statement.StatementSource
 import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementProcessingContext
 import io.github.smaugfm.monobudget.common.util.injectAll
 import io.github.smaugfm.monobudget.common.util.makeJson
+import io.github.smaugfm.monobudget.common.util.logExceptionDetails
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.serialization
