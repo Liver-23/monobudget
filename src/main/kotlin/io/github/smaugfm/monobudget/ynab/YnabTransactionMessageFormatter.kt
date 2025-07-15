@@ -4,13 +4,13 @@ import com.elbekd.bot.types.InlineKeyboardMarkup
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.callback.PressedButtons
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
+import io.github.smaugfm.monobudget.common.model.financial.Amount
 import io.github.smaugfm.monobudget.common.model.financial.StatementItem
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
 import io.github.smaugfm.monobudget.common.util.MCCRegistry
 import io.github.smaugfm.monobudget.common.util.replaceNewLines
 import io.github.smaugfm.monobudget.ynab.model.YnabCleared
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
-import io.github.smaugfm.monobudget.common.model.financial.Amount
 import org.koin.core.annotation.Single
 import java.util.Currency
 
