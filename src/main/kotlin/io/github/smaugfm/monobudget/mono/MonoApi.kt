@@ -58,6 +58,7 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
         var delayMs = INITIAL_RETRY_DELAY_MS
         repeat(MAX_RETRY_ATTEMPTS) { attempt ->
             try {
+                log.info { "Attempt ${attempt + 1} to set webhook..." }
                 api.setClientWebhook(url.toString()).awaitSingleOrNull()
                 return
             } catch (e: Throwable) {
@@ -84,7 +85,7 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
     companion object {
         private const val SERVER_STOP_GRACE_PERIOD = 100L
         private const val MAX_RETRY_ATTEMPTS = 5
-        private const val INITIAL_RETRY_DELAY_MS = 1000L
+        private const val INITIAL_RETRY_DELAY_MS = 10_000L // 10 seconds
         private const val RETRY_BACKOFF_MULTIPLIER = 2
     }
 }
