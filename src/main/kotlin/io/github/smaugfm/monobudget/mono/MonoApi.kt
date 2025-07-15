@@ -46,29 +46,7 @@ class MonoApi(token: String, val accountId: BankAccountId, private val alias: St
         tempServer.start(wait = false)
 
         try {
-            var attempt = 0
-            val maxAttempts = 5
-            var delayMs = 1000L
-            while (true) {
-                try {
-                    api.setClientWebhook(url.toString()).awaitSingleOrNull()
-                    break
-                } catch (e: Exception) {
-                    // Check for 429 Too Many Requests
-                    val is429 = e.message?.contains("429") == true ||
-                        e.javaClass.simpleName.contains("TooManyRequests", ignoreCase = true) ||
-                        e.message?.contains("Too many requests", ignoreCase = true) == true
-                    if (is429 && attempt < maxAttempts) {
-                        log.warn { "Received 429 Too Many Requests from Monobank API. Retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxAttempts)..." }
-                        kotlinx.coroutines.delay(delayMs)
-                        attempt++
-                        delayMs *= 2
-                        continue
-                    } else {
-                        throw e
-                    }
-                }
-            }
+            retrySetWebhook(url)
             waitForWebhook.await()
             log.info { "Webhook setup completed. Stopping temporary server..." }
         } finally {
@@ -76,7 +54,34 @@ class MonoApi(token: String, val accountId: BankAccountId, private val alias: St
         }
     }
 
+    private suspend fun retrySetWebhook(url: URI) {
+        var delayMs = INITIAL_RETRY_DELAY_MS
+        repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+            try {
+                api.setClientWebhook(url.toString()).awaitSingleOrNull()
+                return
+            } catch (e: Exception) {
+                val is429 = e.message?.contains("429") == true ||
+                    e.javaClass.simpleName.contains("TooManyRequests", ignoreCase = true) ||
+                    e.message?.contains("Too many requests", ignoreCase = true) == true
+                if (is429 && attempt < MAX_RETRY_ATTEMPTS - 1) {
+                    log.warn {
+                        "Received 429 Too Many Requests from Monobank API. " +
+                        "Retrying in ${delayMs}ms (attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS)..."
+                    }
+                    kotlinx.coroutines.delay(delayMs)
+                    delayMs *= RETRY_BACKOFF_MULTIPLIER
+                } else {
+                    throw e
+                }
+            }
+        }
+    }
+
     companion object {
         private const val SERVER_STOP_GRACE_PERIOD = 100L
+        private const val MAX_RETRY_ATTEMPTS = 5
+        private const val INITIAL_RETRY_DELAY_MS = 1000L
+        private const val RETRY_BACKOFF_MULTIPLIER = 2
     }
 }
