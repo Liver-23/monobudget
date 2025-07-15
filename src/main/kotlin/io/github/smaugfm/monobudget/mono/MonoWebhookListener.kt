@@ -44,11 +44,17 @@ class MonoWebhookListener : StatementSource, KoinComponent {
     override suspend fun prepare() {
         if (settings.setWebhook) {
             log.info { "Setting up mono webhooks." }
-            try {
-                monoApis.forEach { it.setupWebhook(settings.monoWebhookUrl, settings.webhookPort) }
-            } catch (e: Throwable) {
-                log.error(e) {}
-                error("Error settings up webhooks. Exiting application...")
+            val failures = mutableListOf<String>()
+            monoApis.forEach { api ->
+                try {
+                    api.setupWebhook(settings.monoWebhookUrl, settings.webhookPort)
+                } catch (e: Throwable) {
+                    log.error(e) { "Failed to set up webhook for account ${api.accountId} (${api.alias})" }
+                    failures.add("${api.accountId} (${api.alias})")
+                }
+            }
+            if (failures.isNotEmpty()) {
+                log.warn { "Some webhooks failed to set up: ${failures.joinToString(", ")}" }
             }
         } else {
             log.info { "Skipping mono webhook setup." }

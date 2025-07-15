@@ -61,9 +61,12 @@ class MonoApi(token: String, val accountId: BankAccountId, private val alias: St
                 api.setClientWebhook(url.toString()).awaitSingleOrNull()
                 return
             } catch (e: Exception) {
-                val is429 = e.message?.contains("429") == true ||
-                    e.javaClass.simpleName.contains("TooManyRequests", ignoreCase = true) ||
-                    e.message?.contains("Too many requests", ignoreCase = true) == true
+                val is429 =
+                    (e::class.simpleName == "MonoApiResponseError" &&
+                        (e.message?.contains("429") == true ||
+                         e.message?.contains("Too many requests", ignoreCase = true) == true)) ||
+                    (e.message?.contains("429") == true ||
+                     e.message?.contains("Too many requests", ignoreCase = true) == true)
                 if (is429 && attempt < MAX_RETRY_ATTEMPTS - 1) {
                     log.warn {
                         "Received 429 Too Many Requests from Monobank API. " +
