@@ -17,7 +17,7 @@ import java.net.URI
 
 private val log = KotlinLogging.logger {}
 
-class MonoApi(token: String, val accountId: BankAccountId, private val alias: String) {
+class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
     init {
         require(token.isNotBlank())
     }
