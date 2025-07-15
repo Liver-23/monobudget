@@ -46,7 +46,29 @@ class MonoApi(token: String, val accountId: BankAccountId, private val alias: St
         tempServer.start(wait = false)
 
         try {
-            api.setClientWebhook(url.toString()).awaitSingleOrNull()
+            var attempt = 0
+            val maxAttempts = 5
+            var delayMs = 1000L
+            while (true) {
+                try {
+                    api.setClientWebhook(url.toString()).awaitSingleOrNull()
+                    break
+                } catch (e: Exception) {
+                    // Check for 429 Too Many Requests
+                    val is429 = e.message?.contains("429") == true ||
+                        e.javaClass.simpleName.contains("TooManyRequests", ignoreCase = true) ||
+                        e.message?.contains("Too many requests", ignoreCase = true) == true
+                    if (is429 && attempt < maxAttempts) {
+                        log.warn { "Received 429 Too Many Requests from Monobank API. Retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxAttempts)..." }
+                        kotlinx.coroutines.delay(delayMs)
+                        attempt++
+                        delayMs *= 2
+                        continue
+                    } else {
+                        throw e
+                    }
+                }
+            }
             waitForWebhook.await()
             log.info { "Webhook setup completed. Stopping temporary server..." }
         } finally {
