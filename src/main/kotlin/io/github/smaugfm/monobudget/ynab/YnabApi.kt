@@ -87,9 +87,11 @@ class YnabApi(backend: YNAB) {
 
     suspend fun getAccount(accountId: String): YnabAccount =
         catching(this::getAccount) {
-            httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-                .body<YnabAccountResponse>()
-        }.data.account
+            val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
+            val rawBody = response.bodyAsText()
+            log.debug { "Raw YNAB getAccount response: $rawBody" }
+            kotlinx.serialization.json.Json.decodeFromString<YnabAccountResponse>(rawBody).data.account
+        }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     suspend fun getAccounts(): List<YnabAccount> =
