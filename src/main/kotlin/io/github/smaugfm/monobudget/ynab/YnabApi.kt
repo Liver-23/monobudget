@@ -86,10 +86,22 @@ class YnabApi(backend: YNAB) {
         }.data.budget
 
     suspend fun getAccount(accountId: String): YnabAccount =
-        catching(this::getAccount) {
-            httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
-                .body<YnabAccountResponse>()
-        }.data.account
+        try {
+            catching(this::getAccount) {
+                httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
+                    .body<YnabAccountResponse>()
+            }.data.account
+        } catch (e: Exception) {
+            // Try to log the raw response body for debugging
+            try {
+                val response = httpClient.get(buildUrl("budgets", budgetId, "accounts", accountId))
+                val rawBody = response.bodyAsText()
+                log.error { "Failed to deserialize YnabAccountResponse. Raw response: $rawBody" }
+            } catch (ex: Exception) {
+                log.error { "Failed to fetch raw response body from YNAB API: ${ex.message}" }
+            }
+            throw e
+        }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
     suspend fun getAccounts(): List<YnabAccount> =
