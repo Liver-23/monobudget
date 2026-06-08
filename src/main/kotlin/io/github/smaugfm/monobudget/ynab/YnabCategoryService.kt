@@ -4,6 +4,7 @@ import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.BudgetBackend
 import io.github.smaugfm.monobudget.common.model.financial.Amount
 import io.github.smaugfm.monobudget.common.util.misc.PeriodicFetcherFactory
+import io.github.smaugfm.monobudget.ynab.model.YnabCategory
 import org.koin.core.annotation.Single
 import java.util.Currency
 
@@ -13,17 +14,31 @@ class YnabCategoryService(
     private val api: YnabApi,
     private val ynab: BudgetBackend.YNAB,
 ) : CategoryService() {
+    private data class CategoryCache(
+        val groups: List<CategoryGroup>,
+        val categoriesById: Map<String, YnabCategory>,
+    )
+
     private val categoriesFetcher =
         periodicFetcherFactory.create("YNAB categories") {
-            api.getCategoryGroups().flatMap { group ->
-                if (group.hidden || group.deleted) {
-                    emptyList()
-                } else {
-                    group.categories.filter { category ->
-                        !category.hidden && !category.deleted
-                    }
-                }
-            }
+            val categoriesById = mutableMapOf<String, YnabCategory>()
+            val groups =
+                api.getCategoryGroups()
+                    .filter { group -> !group.hidden && !group.deleted }
+                    .map { group ->
+                        val categories =
+                            group.categories
+                                .filter { category -> !category.hidden && !category.deleted }
+                                .sortedBy { it.name.lowercase() }
+                                .onEach { category -> categoriesById[category.id] = category }
+                                .map { category -> category.id to category.name }
+                        CategoryGroup(
+                            id = group.id,
+                            name = group.name,
+                            categories = categories,
+                        )
+                    }.sortedBy { it.name.lowercase() }
+            CategoryCache(groups, categoriesById)
         }
 
     private val budgetCurrencyFetcher =
@@ -31,13 +46,10 @@ class YnabCategoryService(
             Currency.getInstance(api.getBudget(ynab.ynabBudgetId).currencyFormat.isoCode)
         }
 
-    override suspend fun categoryIdToNameList(): List<Pair<String, String>> =
-        categoriesFetcher.fetched().map {
-            it.id to it.name
-        }
+    override suspend fun categoryGroups(): List<CategoryGroup> = categoriesFetcher.fetched().groups
 
     override suspend fun budgetedCategoryByIdInternal(categoryId: String): BudgetedCategory? {
-        val category = categoriesFetcher.fetched().find { it.id == categoryId } ?: return null
+        val category = categoriesFetcher.fetched().categoriesById[categoryId] ?: return null
         val currency = budgetCurrencyFetcher.fetched()
 
         return BudgetedCategory(
@@ -54,7 +66,7 @@ class YnabCategoryService(
     }
 
     override suspend fun categoryIdByName(categoryName: String): String? =
-        categoriesFetcher.fetched()
+        categoriesFetcher.fetched().categoriesById.values
             .firstOrNull { it.name == categoryName }
             ?.id
 }

@@ -22,7 +22,16 @@ abstract class CategoryService : KoinComponent {
         return budgetedCategoryByIdInternal(categoryId)
     }
 
-    abstract suspend fun categoryIdToNameList(): List<Pair<String, String>>
+    data class CategoryGroup(
+        val id: String,
+        val name: String,
+        val categories: List<Pair<String, String>>,
+    )
+
+    abstract suspend fun categoryGroups(): List<CategoryGroup>
+
+    open suspend fun categoryIdToNameList(): List<Pair<String, String>> =
+        categoryGroups().flatMap { it.categories }
 
     suspend fun inferCategoryIdByMcc(mcc: Int): String? =
         inferCategoryNameByMcc(mcc)?.let { categoryIdByName(it) }

@@ -26,10 +26,19 @@ class LunchmoneyCategoryService(
             ?.id
             ?.toString()
 
-    override suspend fun categoryIdToNameList(): List<Pair<String, String>> =
-        categoriesFetcher.fetched().map {
-            it.id.toString() to it.name
-        }
+    override suspend fun categoryGroups(): List<CategoryGroup> {
+        val categories =
+            categoriesFetcher.fetched()
+                .sortedBy { it.name.lowercase() }
+                .map { it.id.toString() to it.name }
+        return listOf(
+            CategoryGroup(
+                id = "all",
+                name = "Categories",
+                categories = categories,
+            ),
+        )
+    }
 
     override suspend fun budgetedCategoryByIdInternal(categoryId: String): BudgetedCategory? {
         val categoryIdLong = categoryId.toLong()

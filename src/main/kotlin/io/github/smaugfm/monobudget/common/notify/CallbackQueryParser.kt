@@ -3,8 +3,11 @@ package io.github.smaugfm.monobudget.common.notify
 import com.elbekd.bot.types.CallbackQuery
 import com.elbekd.bot.types.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.BackToCategoryGroups
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryGroupPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategoryGroup
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.MakePayee
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Unapprove
@@ -55,11 +58,21 @@ class CallbackQueryParser {
             Unapprove::class -> Unapprove(transactionId)
             MakePayee::class -> MakePayee(transactionId, payee)
             ChooseCategory::class -> ChooseCategory(transactionId)
-            CategoryPage::class ->
-                CategoryPage(
+            CategoryGroupPage::class ->
+                CategoryGroupPage(
                     transactionId,
-                    CategoryPage.extractPage(callbackData),
+                    CategoryGroupPage.extractPage(callbackData),
                 )
+            ChooseCategoryGroup::class ->
+                ChooseCategoryGroup(
+                    transactionId,
+                    ChooseCategoryGroup.extractGroupId(callbackData),
+                )
+            CategoryPage::class -> {
+                val (groupId, page) = CategoryPage.extract(callbackData)
+                CategoryPage(transactionId, groupId, page)
+            }
+            BackToCategoryGroups::class -> BackToCategoryGroups(transactionId)
             UpdateCategory::class ->
                 UpdateCategory(
                     transactionId,

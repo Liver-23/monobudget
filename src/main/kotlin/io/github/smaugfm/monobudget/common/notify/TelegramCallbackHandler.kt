@@ -9,8 +9,11 @@ import com.elbekd.bot.types.ParseMode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.BackToCategoryGroups
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryGroupPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategoryGroup
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.model.settings.MultipleAccountSettings
@@ -65,22 +68,44 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         message: Message,
     ) {
         when (callbackType) {
-            is ChooseCategory -> showCategoryKeyboard(message, page = 0)
-            is CategoryPage -> showCategoryKeyboard(message, page = callbackType.page)
+            is ChooseCategory -> showGroupKeyboard(message, page = 0)
+            is CategoryGroupPage -> showGroupKeyboard(message, page = callbackType.page)
+            is ChooseCategoryGroup -> showCategoryKeyboard(message, callbackType.groupId, page = 0)
+            is CategoryPage ->
+                showCategoryKeyboard(message, callbackType.groupId, page = callbackType.page)
+            is BackToCategoryGroups -> showGroupKeyboard(message, page = 0)
         }
+    }
+
+    private suspend fun showGroupKeyboard(
+        message: Message,
+        page: Int,
+    ) {
+        val groups =
+            categoryService.categoryGroups().map { group ->
+                group.id to group.name
+            }
+        telegram.editKeyboard(
+            ChatId.IntegerId(message.chat.id),
+            message.messageId,
+            CategoryInlineKeyboard.buildGroups(groups, page),
+        )
     }
 
     private suspend fun showCategoryKeyboard(
         message: Message,
+        groupId: String,
         page: Int,
     ) {
+        val categories =
+            categoryService.categoryGroups()
+                .find { it.id == groupId }
+                ?.categories
+                ?: emptyList()
         telegram.editKeyboard(
             ChatId.IntegerId(message.chat.id),
             message.messageId,
-            CategoryInlineKeyboard.build(
-                categoryService.categoryIdToNameList(),
-                page,
-            ),
+            CategoryInlineKeyboard.buildCategories(categories, groupId, page),
         )
     }
 
