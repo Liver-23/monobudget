@@ -17,7 +17,7 @@ import java.net.URI
 
 private val log = KotlinLogging.logger {}
 
-class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
+class MonoApi(val token: String, val accountId: BankAccountId, val alias: String) {
     init {
         require(token.isNotBlank())
     }
@@ -27,6 +27,7 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
     suspend fun setupWebhook(
         url: URI,
         port: Int,
+        label: String = alias,
     ) {
         require(url.toASCIIString() == url.toString())
 
@@ -37,7 +38,7 @@ class MonoApi(token: String, val accountId: BankAccountId, val alias: String) {
                     get(url.path) {
                         call.response.status(HttpStatusCode.OK)
                         call.respondText("OK\n", ContentType.Text.Plain)
-                        log.info { "Webhook setup for $alias successful: $url" }
+                        log.info { "Webhook setup for $label successful: $url" }
                         waitForWebhook.complete(Unit)
                     }
                 }

@@ -27,9 +27,11 @@ sealed class TransactionUpdateType : CallbackType() {
                 categoryId: String,
                 categoryName: String,
             ) = InlineKeyboardButton(
-                categoryName,
+                categoryName.take(BUTTON_TEXT_MAX_LENGTH),
                 callbackData = "${UpdateCategory::class.simpleName}$DELIMITER$categoryId",
             )
+
+            private const val BUTTON_TEXT_MAX_LENGTH = 64
 
             fun extractCategoryIdFromCallbackData(callbackData: String) = callbackData.split(DELIMITER)[1]
         }

@@ -3,6 +3,8 @@ package io.github.smaugfm.monobudget.common.notify
 import com.elbekd.bot.types.CallbackQuery
 import com.elbekd.bot.types.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.MakePayee
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Unapprove
@@ -52,6 +54,12 @@ class CallbackQueryParser {
             Uncategorize::class -> Uncategorize(transactionId)
             Unapprove::class -> Unapprove(transactionId)
             MakePayee::class -> MakePayee(transactionId, payee)
+            ChooseCategory::class -> ChooseCategory(transactionId)
+            CategoryPage::class ->
+                CategoryPage(
+                    transactionId,
+                    CategoryPage.extractPage(callbackData),
+                )
             UpdateCategory::class ->
                 UpdateCategory(
                     transactionId,

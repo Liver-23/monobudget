@@ -2,6 +2,7 @@ package io.github.smaugfm.monobudget.common.notify
 
 import com.elbekd.bot.Bot
 import com.elbekd.bot.model.ChatId
+import com.elbekd.bot.model.TelegramApiError
 import com.elbekd.bot.types.CallbackQuery
 import com.elbekd.bot.types.InlineKeyboardMarkup
 import com.elbekd.bot.types.ParseMode
@@ -55,12 +56,20 @@ class TelegramApi(
         messageId: Long,
         replyMarkup: InlineKeyboardMarkup,
     ) {
-        bot.editMessageReplyMarkup(
-            chatId,
-            messageId,
-            null,
-            replyMarkup,
-        )
+        try {
+            bot.editMessageReplyMarkup(
+                chatId,
+                messageId,
+                null,
+                replyMarkup,
+            )
+        } catch (e: TelegramApiError) {
+            if (e.isBenign()) {
+                log.debug { "Skipped Telegram keyboard edit: ${e.description}" }
+                return
+            }
+            throw e
+        }
     }
 
     suspend fun editMessage(
@@ -84,7 +93,15 @@ class TelegramApi(
     }
 
     suspend fun answerCallbackQuery(id: String) {
-        bot.answerCallbackQuery(id, cacheTime = 5)
+        try {
+            bot.answerCallbackQuery(id, cacheTime = 5)
+        } catch (e: TelegramApiError) {
+            if (e.isBenign()) {
+                log.debug { "Skipped answering stale callback query: ${e.description}" }
+                return
+            }
+            throw e
+        }
     }
 
     fun start(callbackHandler: suspend (CallbackQuery) -> Unit): Job {

@@ -2,22 +2,20 @@ package io.github.smaugfm.monobudget.ynab
 
 import com.elbekd.bot.types.InlineKeyboardMarkup
 import io.github.smaugfm.monobudget.common.category.CategoryService
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType
 import io.github.smaugfm.monobudget.common.model.callback.PressedButtons
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.model.financial.Amount
 import io.github.smaugfm.monobudget.common.model.financial.StatementItem
-import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementProcessingScopeComponent
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
 import io.github.smaugfm.monobudget.common.util.MCCRegistry
 import io.github.smaugfm.monobudget.common.util.replaceNewLines
 import io.github.smaugfm.monobudget.ynab.model.YnabCleared
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
-import org.koin.core.annotation.Scope
-import org.koin.core.annotation.Scoped
+import org.koin.core.annotation.Single
 import java.util.Currency
 
-@Scoped
-@Scope(StatementProcessingScopeComponent::class)
+@Single
 class YnabTransactionMessageFormatter(
     private val categoryService: CategoryService,
 ) : TransactionMessageFormatter<YnabTransactionDetail>() {
@@ -53,9 +51,6 @@ class YnabTransactionMessageFormatter(
     ): PressedButtons {
         val pressed = PressedButtons(callbackType)
 
-        if (transaction.categoryName.isNullOrEmpty()) {
-            pressed(TransactionUpdateType.Uncategorize::class)
-        }
         if (transaction.cleared == YnabCleared.Uncleared) {
             pressed(TransactionUpdateType.Unapprove::class)
         }
@@ -68,7 +63,7 @@ class YnabTransactionMessageFormatter(
             listOf(
                 listOf(
                     TransactionUpdateType.Unapprove.button(pressed),
-                    TransactionUpdateType.Uncategorize.button(pressed),
+                    ActionCallbackType.ChooseCategory.button(pressed),
                     TransactionUpdateType.MakePayee.button(pressed),
                 ),
             ),

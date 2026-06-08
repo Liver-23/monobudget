@@ -15,16 +15,16 @@ open class ButtonBase(private val cls: KClass<out CallbackType>) {
     private fun buttonText(pressed: Boolean) =
         when (cls) {
             TransactionUpdateType.MakePayee::class ->
-                (if (pressed) PRESSED_CHAR else "➕") + "payee"
+                (if (pressed) PRESSED_CHAR else "➕") + "Payee"
 
             TransactionUpdateType.Uncategorize::class ->
-                (if (pressed) PRESSED_CHAR else "❌") + "категорію"
+                (if (pressed) PRESSED_CHAR else "❌") + "Categorize"
 
             TransactionUpdateType.Unapprove::class ->
-                (if (pressed) PRESSED_CHAR else "🚫") + "unapprove"
+                (if (pressed) PRESSED_CHAR else "🚫") + "Unapprove"
 
             ActionCallbackType.ChooseCategory::class ->
-                "⤴️категорію"
+                (if (pressed) PRESSED_CHAR else "⤴️") + "Categorize"
 
             else -> error("Unsupported class $cls")
         }

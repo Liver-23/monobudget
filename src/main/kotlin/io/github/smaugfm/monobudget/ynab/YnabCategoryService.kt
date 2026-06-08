@@ -15,8 +15,14 @@ class YnabCategoryService(
 ) : CategoryService() {
     private val categoriesFetcher =
         periodicFetcherFactory.create("YNAB categories") {
-            api.getCategoryGroups().flatMap {
-                it.categories
+            api.getCategoryGroups().flatMap { group ->
+                if (group.hidden || group.deleted) {
+                    emptyList()
+                } else {
+                    group.categories.filter { category ->
+                        !category.hidden && !category.deleted
+                    }
+                }
             }
         }
 

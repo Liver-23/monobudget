@@ -9,15 +9,13 @@ import com.elbekd.bot.types.ParseMode
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
-import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.UpdateCategory
 import io.github.smaugfm.monobudget.common.model.settings.MultipleAccountSettings
 import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementEvents
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
-import io.github.smaugfm.monobudget.common.util.isEven
-import io.github.smaugfm.monobudget.common.util.isOdd
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -45,20 +43,20 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
 
             log.debug { "Parsed callback query id=${callbackQuery.id}of callbackType: $callbackType" }
 
+            telegram.answerCallbackQuery(callbackQuery.id)
+
             when (callbackType) {
                 is ActionCallbackType -> handleAction(callbackType, res.message)
                 is TransactionUpdateType -> handleUpdate(callbackType, res.message)
             }
+        } catch (e: TelegramApiError) {
+            if (e.isBenign()) {
+                log.debug { "Ignoring benign Telegram callback error: ${e.description}" }
+            } else {
+                statementEvents.onCallbackError(callbackQuery, callbackType, e)
+            }
         } catch (e: Throwable) {
             statementEvents.onCallbackError(callbackQuery, callbackType, e)
-        } finally {
-            try {
-                telegram.answerCallbackQuery(callbackQuery.id)
-            } catch (e: Throwable) {
-                log.error(e) {
-                    "Error answering callback queryId=${callbackQuery.id}"
-                }
-            }
         }
     }
 
@@ -67,34 +65,23 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         message: Message,
     ) {
         when (callbackType) {
-            is ChooseCategory ->
-                telegram.editKeyboard(
-                    ChatId.IntegerId(message.chat.id),
-                    message.messageId,
-                    categoriesInlineKeyboard(
-                        categoryService.categoryIdToNameList(),
-                    ),
-                )
+            is ChooseCategory -> showCategoryKeyboard(message, page = 0)
+            is CategoryPage -> showCategoryKeyboard(message, page = callbackType.page)
         }
     }
 
-    private fun categoriesInlineKeyboard(
-        categoryIdToNameList: List<Pair<String, String>>,
-    ): InlineKeyboardMarkup {
-        val buttons =
-            categoryIdToNameList
-                .map { (id, name) -> UpdateCategory.button(id, name) }
-        val rows =
-            buttons
-                .zipWithNext()
-                .map { it.toList() }
-                .filterIndexed { i, _ -> i.isEven() }
-                .toMutableList()
-        if (buttons.size.isOdd()) {
-            rows.add(listOf(buttons.last()))
-        }
-
-        return InlineKeyboardMarkup(rows.toList())
+    private suspend fun showCategoryKeyboard(
+        message: Message,
+        page: Int,
+    ) {
+        telegram.editKeyboard(
+            ChatId.IntegerId(message.chat.id),
+            message.messageId,
+            CategoryInlineKeyboard.build(
+                categoryService.categoryIdToNameList(),
+                page,
+            ),
+        )
     }
 
     private suspend fun handleUpdate(
@@ -127,9 +114,10 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
                     updatedMarkup,
                 )
             } catch (e: TelegramApiError) {
-                if (e.description.contains("message is not modified")) {
+                if (e.isBenign()) {
                     return
                 }
+                throw e
             }
         }
     }

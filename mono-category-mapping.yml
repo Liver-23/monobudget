@@ -1,0 +1,291 @@
+# Mono-based category mapping (from scratch)
+# Advisory reference — independent of YNAB categories.
+# Used by scripts/analyze_mono_categories.py to classify transactions.
+
+groups:
+  - name: Transfers
+    is_expense: false
+    categories:
+      - name: Family
+        payee_patterns:
+          - "Kate Myronova"
+          - "Мама"
+      - name: Canada / large
+        payee_patterns:
+          - "Переказ на картку"
+          - "Canada Transfer"
+      - name: Internal (pots)
+        payee_patterns:
+          - "На альпаку"
+          - "Округлення балансу"
+        exclude_from_reports: true
+      - name: Other P2P
+        mcc: [4829]
+        payee_patterns:
+          - "переказ"
+          - "transfer"
+
+  - name: Groceries & Food
+    categories:
+      - name: Supermarkets
+        payee_patterns:
+          - "Ашан"
+          - "АТБ"
+          - "Сільпо"
+          - "NOVUS"
+          - "Novus"
+          - "Велика Кишеня"
+        mcc: [5411, 5499]
+      - name: Local shops
+        payee_patterns:
+          - "KARLSON SHOP"
+          - "Karlson"
+          - "Пчілка маркет"
+          - "PANDA"
+          - "Ukrprompostach"
+        mcc: [5411, 5499]
+      - name: Bakery / specialty
+        payee_patterns:
+          - "Перша Пекарня"
+          - "Експрес Маркет"
+
+  - name: Utilities & Home
+    categories:
+      - name: Electricity
+        payee_patterns:
+          - "Yasno"
+        mcc: [4900]
+      - name: Communal (bundled)
+        payee_patterns:
+          - "Portmone"
+          - "LIQPAY"
+          - "GERC.UA"
+          - "Дах"
+          - "Communal"
+        mcc: [4900, 7393]
+      - name: Water
+        payee_patterns:
+          - "водоканал"
+          - "Water supplier"
+        mcc: [4900]
+      - name: Security
+        payee_patterns:
+          - "Security company"
+        mcc: [7393]
+      - name: Heating
+        payee_patterns:
+          - "heating"
+          - "опалення"
+        mcc: [4900]
+
+  - name: Connectivity
+    categories:
+      - name: Mobile
+        payee_patterns:
+          - "Київстар"
+          - "Kyivstar"
+          - "Lifecell"
+          - "lifecell"
+        mcc: [4814]
+      - name: Internet
+        payee_patterns:
+          - "Internet provider"
+          - "iPay.ua"
+        mcc: [4816]
+
+  - name: Subscriptions
+    categories:
+      - name: AI Tools
+        payee_patterns:
+          - "Cursor"
+          - "OpenAI"
+          - "ChatGPT"
+          - "Perplexity"
+      - name: Productivity
+        payee_patterns:
+          - "Setapp"
+          - "SetApp"
+          - "FANTASTICAL"
+          - "Fantastical"
+          - "Termius"
+          - "ProtonMail"
+          - "1Password"
+          - "1password"
+          - "RAYCAST"
+          - "YNAB"
+      - name: Streaming
+        payee_patterns:
+          - "Netflix"
+          - "HBO Max"
+          - "Megogo"
+          - "MEGOGO"
+          - "Setanta"
+          - "YouTube"
+          - "Youtube"
+        mcc: [4899, 7841]
+      - name: Apple Services
+        payee_patterns:
+          - "iCloud"
+          - "Apple TV"
+          - "Apple Arcade"
+          - "Apple"
+        max_amount_uah: 1500
+      - name: Cloud Storage
+        payee_patterns:
+          - "pCloud"
+          - "Pcloud"
+      - name: Media / Reading
+        payee_patterns:
+          - "MEDIUM MONTHLY"
+        mcc: [5968]
+      - name: Google
+        payee_patterns:
+          - "Google Play"
+          - "Google"
+        mcc: [5816, 5817, 5734]
+      - name: PayPal
+        payee_patterns:
+          - "PayPal"
+          - "Paypal"
+        needs_manual_review: true
+
+  - name: Business & Infrastructure
+    categories:
+      - name: Blockchain nodes
+        payee_patterns:
+          - "QUICKNODE"
+          - "CHAINSTACK"
+          - "ChainStack"
+        mcc: [5734, 7372]
+      - name: Cloud servers
+        payee_patterns:
+          - "AWS"
+          - "Google Cloud"
+          - "OVH"
+        mcc: [7372]
+
+  - name: Entertainment
+    categories:
+      - name: Gaming
+        payee_patterns:
+          - "PlayStation"
+          - "Steam"
+          - "Boosteroid"
+          - "WoT Blitz"
+        mcc: [5816]
+      - name: Betting
+        payee_patterns:
+          - "VBET"
+        mcc: [7995]
+      - name: Hobbies
+        payee_patterns:
+          - "WWW.F1.COM"
+          - "Patreon"
+        mcc: [5818]
+
+  - name: Travel & Canada
+    categories:
+      - name: Transit
+        payee_patterns:
+          - "GPCANADACA"
+        mcc: [4111, 4121]
+      - name: Accommodation
+        payee_patterns:
+          - "GREAT WOLF LODGE"
+        mcc: [7011]
+      - name: Activities & tickets
+        payee_patterns:
+          - "CN TOWER"
+          - "Ripley"
+          - "RIPLEY"
+          - "Cineplex"
+          - "CINEPLEX"
+          - "Skywheel"
+          - "SKYWHEEL"
+          - "Go Kart"
+          - "GO KART"
+          - "TABLE ROCK"
+        mcc: [7991, 7996]
+      - name: Dining abroad
+        payee_patterns:
+          - "BENIHANA"
+          - "CAFE LANDWER"
+          - "LANDWER"
+        mcc: [5812]
+      - name: Shopping abroad
+        payee_patterns:
+          - "FOOT LOCKER CANADA"
+          - "PHARMAPRIX"
+          - "TRADING POST"
+          - "Sephora"
+        mcc: [5651, 5912, 7011]
+      - name: Canada groceries
+        payee_patterns:
+          - "Canada Stores"
+        mcc: [5411, 5499]
+      - name: Convenience abroad
+        payee_patterns:
+          - "COUCHE-TARD"
+        mcc: [5541]
+
+  - name: Shopping
+    categories:
+      - name: Online marketplaces
+        payee_patterns:
+          - "Amazon"
+          - "Rozetka"
+        mcc: [5262, 5311]
+      - name: Electronics
+        payee_patterns:
+          - "Apple"
+        mcc: [5732, 5818]
+        min_amount_uah: 2000
+      - name: Clothing & gifts
+        payee_patterns:
+          - "CHARISMA"
+          - "Lego"
+        mcc: [5947, 5621, 5651]
+
+  - name: Lifestyle
+    categories:
+      - name: Takeaway / fast food
+        payee_patterns:
+          - "McDonald"
+        mcc: [5814]
+      - name: Pharmacy
+        payee_patterns:
+          - "АНЦ"
+        mcc: [5912, 8099]
+      - name: Charity
+        payee_patterns:
+          - "Charity"
+          - "CHARISMA"
+        mcc: [8398, 8699]
+      - name: Bank fees & interest
+        payee_patterns:
+          - "Списання відсотків"
+          - "Monobank"
+          - "OTP Bank"
+        mcc: [6012]
+
+# Fallback MCC group types (from mcc.json group.type) when payee doesn't match
+mcc_group_type_fallback:
+  US: { group: "Utilities & Home", category: "Communal (bundled)" }
+  ROS: { group: "Shopping", category: "Online marketplaces" }
+  MS: { group: "Subscriptions", category: "PayPal" }
+  ES: { group: "Entertainment", category: "Gaming" }
+  BS: { group: "Business & Infrastructure", category: "Cloud servers" }
+  HR: { group: "Travel & Canada", category: "Activities & tickets" }
+  CLS: { group: "Shopping", category: "Clothing & gifts" }
+
+# Fallback by individual MCC when nothing else matches
+mcc_fallback:
+  5411: { group: "Groceries & Food", category: "Supermarkets" }
+  5499: { group: "Groceries & Food", category: "Supermarkets" }
+  4900: { group: "Utilities & Home", category: "Communal (bundled)" }
+  4814: { group: "Connectivity", category: "Mobile" }
+  5816: { group: "Entertainment", category: "Gaming" }
+  5734: { group: "Subscriptions", category: "Productivity" }
+  6012: { group: "Lifestyle", category: "Bank fees & interest" }
+  4829: { group: "Transfers", category: "Other P2P" }
+  5541: { group: "Travel & Canada", category: "Convenience abroad" }
