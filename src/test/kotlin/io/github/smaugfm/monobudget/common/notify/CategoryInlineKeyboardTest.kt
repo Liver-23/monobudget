@@ -19,13 +19,12 @@ class CategoryInlineKeyboardTest {
         }
 
     @Test
-    fun `shows one group per row`() {
+    fun `shows groups in two columns`() {
         val keyboard = CategoryInlineKeyboard.buildGroups(groups, page = 0)
 
-        assertThat(keyboard.inlineKeyboard).hasSize(3)
-        assertThat(keyboard.inlineKeyboard[0].single().text).isEqualTo("Bills")
-        assertThat(keyboard.inlineKeyboard[1].single().text).isEqualTo("Everyday")
-        assertThat(keyboard.inlineKeyboard[2].single().text).isEqualTo("Goals")
+        assertThat(keyboard.inlineKeyboard).hasSize(2)
+        assertThat(keyboard.inlineKeyboard[0].map { it.text }).isEqualTo(listOf("Bills", "Everyday"))
+        assertThat(keyboard.inlineKeyboard[1].single().text).isEqualTo("Goals")
     }
 
     @Test
@@ -35,7 +34,7 @@ class CategoryInlineKeyboardTest {
         val firstPage = CategoryInlineKeyboard.buildGroups(manyGroups, page = 0)
         val secondPage = CategoryInlineKeyboard.buildGroups(manyGroups, page = 1)
 
-        assertThat(firstPage.inlineKeyboard).hasSize(21)
+        assertThat(firstPage.inlineKeyboard).hasSize(11)
         assertThat(firstPage.inlineKeyboard.last().single().text).isEqualTo("Next ▶️")
         assertThat(secondPage.inlineKeyboard.last().single().text).isEqualTo("◀️ Prev")
     }

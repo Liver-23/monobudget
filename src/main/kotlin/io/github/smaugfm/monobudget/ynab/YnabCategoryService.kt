@@ -1,5 +1,6 @@
 package io.github.smaugfm.monobudget.ynab
 
+import io.github.smaugfm.monobudget.common.category.CategoryNameSortKey
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.BudgetBackend
 import io.github.smaugfm.monobudget.common.model.financial.Amount
@@ -29,7 +30,7 @@ class YnabCategoryService(
                         val categories =
                             group.categories
                                 .filter { category -> !category.hidden && !category.deleted }
-                                .sortedBy { it.name.lowercase() }
+                                .sortedBy { CategoryNameSortKey.of(it.name) }
                                 .onEach { category -> categoriesById[category.id] = category }
                                 .map { category -> category.id to category.name }
                         CategoryGroup(
@@ -37,7 +38,7 @@ class YnabCategoryService(
                             name = group.name,
                             categories = categories,
                         )
-                    }.sortedBy { it.name.lowercase() }
+                    }.sortedBy { CategoryNameSortKey.of(it.name) }
             CategoryCache(groups, categoriesById)
         }
 

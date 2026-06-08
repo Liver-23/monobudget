@@ -2,6 +2,7 @@ package io.github.smaugfm.monobudget.lunchmoney
 
 import io.github.smaugfm.lunchmoney.api.LunchmoneyApi
 import io.github.smaugfm.lunchmoney.model.LunchmoneyBudget
+import io.github.smaugfm.monobudget.common.category.CategoryNameSortKey
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.financial.Amount
 import io.github.smaugfm.monobudget.common.util.misc.PeriodicFetcherFactory
@@ -29,7 +30,7 @@ class LunchmoneyCategoryService(
     override suspend fun categoryGroups(): List<CategoryGroup> {
         val categories =
             categoriesFetcher.fetched()
-                .sortedBy { it.name.lowercase() }
+                .sortedBy { CategoryNameSortKey.of(it.name) }
                 .map { it.id.toString() to it.name }
         return listOf(
             CategoryGroup(

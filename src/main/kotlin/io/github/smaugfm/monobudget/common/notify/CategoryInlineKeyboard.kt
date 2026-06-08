@@ -28,11 +28,8 @@ internal object CategoryInlineKeyboard {
                 .drop(safePage * ITEMS_PER_PAGE)
                 .take(ITEMS_PER_PAGE)
 
-        val rows =
-            pageGroups
-                .map { (id, name) ->
-                    listOf(ChooseCategoryGroup.button(name, id))
-                }.toMutableList()
+        val buttons = pageGroups.map { (id, name) -> ChooseCategoryGroup.button(name, id) }
+        val rows = buttonsToTwoColumnRows(buttons)
 
         addNavigationRow(
             rows = rows,
@@ -62,15 +59,7 @@ internal object CategoryInlineKeyboard {
                 .take(ITEMS_PER_PAGE)
 
         val buttons = pageCategories.map { (id, name) -> UpdateCategory.button(id, name) }
-        val rows =
-            buttons
-                .zipWithNext()
-                .map { it.toList() }
-                .filterIndexed { index, _ -> index.isEven() }
-                .toMutableList()
-        if (buttons.size.isOdd()) {
-            rows.add(listOf(buttons.last()))
-        }
+        val rows = buttonsToTwoColumnRows(buttons)
 
         addNavigationRow(
             rows = rows,
@@ -83,6 +72,19 @@ internal object CategoryInlineKeyboard {
         rows.add(listOf(BackToCategoryGroups.button()))
 
         return InlineKeyboardMarkup(rows)
+    }
+
+    private fun buttonsToTwoColumnRows(buttons: List<InlineKeyboardButton>): MutableList<List<InlineKeyboardButton>> {
+        val rows =
+            buttons
+                .zipWithNext()
+                .map { it.toList() }
+                .filterIndexed { index, _ -> index.isEven() }
+                .toMutableList()
+        if (buttons.size.isOdd()) {
+            rows.add(listOf(buttons.last()))
+        }
+        return rows
     }
 
     private fun addNavigationRow(
