@@ -1,0 +1,17 @@
+[Unit]
+Description=Monobudget - Monobank to budgeting app sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=liver23
+Group=liver23
+WorkingDirectory=/home/liver23/monobudget
+EnvironmentFile=/home/liver23/monobudget/deploy/monobudget.env
+ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java -jar /home/liver23/monobudget/build/libs/monobudget-fat.jar
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

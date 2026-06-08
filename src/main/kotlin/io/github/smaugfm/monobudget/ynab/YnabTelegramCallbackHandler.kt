@@ -3,6 +3,8 @@ package io.github.smaugfm.monobudget.ynab
 import com.elbekd.bot.types.Message
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.notify.TelegramCallbackHandler
+import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.extractAccountBalance
+import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.extractAccountName
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.extractFromOldMessage
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter.Companion.formatHTMLStatementMessage
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
@@ -46,6 +48,7 @@ class YnabTelegramCallbackHandler(
         val (description, mcc, currency) = extractFromOldMessage(oldMessage)
 
         val category = categoryService.budgetedCategoryById(updatedTransaction.categoryId)
+
         return formatHTMLStatementMessage(
             "YNAB",
             description,
@@ -54,6 +57,8 @@ class YnabTelegramCallbackHandler(
             category,
             updatedTransaction.payeeName ?: "",
             updatedTransaction.id,
+            accountName = extractAccountName(oldMessage) ?: updatedTransaction.accountName,
+            accountBalance = extractAccountBalance(oldMessage),
         )
     }
 }

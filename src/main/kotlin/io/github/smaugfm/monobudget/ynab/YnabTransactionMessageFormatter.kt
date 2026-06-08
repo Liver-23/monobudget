@@ -6,15 +6,18 @@ import io.github.smaugfm.monobudget.common.model.callback.PressedButtons
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.model.financial.Amount
 import io.github.smaugfm.monobudget.common.model.financial.StatementItem
+import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementProcessingScopeComponent
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
 import io.github.smaugfm.monobudget.common.util.MCCRegistry
 import io.github.smaugfm.monobudget.common.util.replaceNewLines
 import io.github.smaugfm.monobudget.ynab.model.YnabCleared
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
-import org.koin.core.annotation.Single
+import org.koin.core.annotation.Scope
+import org.koin.core.annotation.Scoped
 import java.util.Currency
 
-@Single
+@Scoped
+@Scope(StatementProcessingScopeComponent::class)
 class YnabTransactionMessageFormatter(
     private val categoryService: CategoryService,
 ) : TransactionMessageFormatter<YnabTransactionDetail>() {
@@ -35,6 +38,8 @@ class YnabTransactionMessageFormatter(
                 category,
                 transaction.payeeName ?: "",
                 transaction.id,
+                accountName = bankAccounts.getAccountAlias(accountId),
+                accountBalance = balanceAfterTransaction?.format(),
             )
         }
     }

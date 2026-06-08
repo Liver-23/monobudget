@@ -15,9 +15,12 @@ abstract class TransferDetector<TTransaction>(
     suspend fun checkForTransfer(): MaybeTransfer<TTransaction> =
         ctx.getOrPut("transfer") {
             val existingTransfer =
-                cache.getEntries(ctx.item).firstOrNull { (recentStatementItem) ->
-                    checkIsTransferTransactions(recentStatementItem)
-                }?.value?.await()
+                cache.getEntries(ctx.item).firstNotNullOfOrNull { (recentStatementItem, deferred) ->
+                    if (!checkIsTransferTransactions(recentStatementItem)) {
+                        return@firstNotNullOfOrNull null
+                    }
+                    runCatching { deferred.await() }.getOrNull()
+                }
 
             if (existingTransfer != null) {
                 log.info {
@@ -82,5 +85,10 @@ abstract class TransferDetector<TTransaction>(
     private fun mccMatch(
         new: StatementItem,
         existing: StatementItem,
-    ) = new.mcc == existing.mcc
+    ): Boolean {
+        if (new.accountId != existing.accountId) {
+            return true
+        }
+        return new.mcc == existing.mcc
+    }
 }

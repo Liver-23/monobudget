@@ -19,5 +19,8 @@ interface StatementItem {
     val operationAmount: Amount
     val currency: Currency
 
+    val balanceAfterTransaction: Amount?
+        get() = null
+
     fun formatAmount() = operationAmount.format()
 }

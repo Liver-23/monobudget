@@ -26,9 +26,14 @@ sealed class MaybeTransfer<TTransaction> {
         suspend fun consume(block: suspend (StatementItem) -> TTransaction): TTransaction {
             check(!ran) { "Can consume NotTransfer only once" }
 
-            return block(statement).also {
-                processedDeferred.complete(it)
-                ran = true
+            return try {
+                block(statement).also {
+                    processedDeferred.complete(it)
+                    ran = true
+                }
+            } catch (e: Throwable) {
+                processedDeferred.completeExceptionally(e)
+                throw e
             }
         }
     }

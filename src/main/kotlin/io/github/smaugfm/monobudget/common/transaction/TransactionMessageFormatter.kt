@@ -18,7 +18,7 @@ import kotlin.math.roundToLong
 private val log = KotlinLogging.logger {}
 
 abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
-    private val bankAccounts: BankAccountService by inject()
+    protected val bankAccounts: BankAccountService by inject()
 
     suspend fun format(
         statementItem: StatementItem,
@@ -72,6 +72,8 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
             payee: String,
             id: String,
             idLink: String? = null,
+            accountName: String? = null,
+            accountBalance: String? = null,
         ): String {
             log.trace {
                 "Formatting message:" +
@@ -80,10 +82,18 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
                     "\n\tamount: $amount" +
                     "\n\tcategory: $category" +
                     "\n\tpayee: $payee" +
+                    "\n\taccountName: $accountName" +
+                    "\n\taccountBalance: $accountBalance" +
                     "\n\tid: $id"
             }
             val builder = StringBuilder("Нова транзакція Monobank додана в $budgetBackend\n")
             return with(Unit) {
+                if (accountName != null) {
+                    builder.append("      <code>Account: $accountName</code>\n")
+                    accountBalance?.let {
+                        builder.append("      <code>Balance: $it</code>\n")
+                    }
+                }
                 builder.append("\uD83D\uDCB3 <b>$description</b>\n")
                 builder.append("      $mcc\n")
                 builder.append("      <u>$amount</u>\n")
@@ -118,6 +128,26 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
 
         @JvmStatic
         @Suppress("MagicNumber")
+        fun extractAccountBalance(message: Message): String? =
+            message.text!!.lines().firstNotNullOfOrNull { line ->
+                accountInfoRegex
+                    .find(line)
+                    ?.takeIf { it.groupValues[1] in setOf("Balance", "Mono balance") }
+                    ?.groupValues
+                    ?.get(2)
+                    ?.trim()
+            }
+
+        fun extractAccountName(message: Message): String? =
+            message.text!!.lines().firstNotNullOfOrNull { line ->
+                accountInfoRegex
+                    .find(line)
+                    ?.takeIf { it.groupValues[1] == "Account" }
+                    ?.groupValues
+                    ?.get(2)
+                    ?.trim()
+            }
+
         fun extractFromOldMessage(message: Message): OldMessageEntities {
             val text = message.text!!
             val textLines = text.split("\n").filter { it.isNotBlank() }
@@ -125,8 +155,10 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
                 message.entities.find { it.type == MessageEntity.Type.BOLD }
                     ?.run { text.substring(offset, offset + length) }!!
 
-            val mcc = textLines[2].trim()
-            val currencyText = textLines[3].trim()
+            val cardLineIdx = textLines.indexOfFirst { it.contains("\uD83D\uDCB3") }
+            check(cardLineIdx >= 0) { "Could not find transaction description line in message" }
+            val mcc = textLines[cardLineIdx + 1].trim()
+            val currencyText = textLines[cardLineIdx + 2].trim()
 
             return OldMessageEntities(
                 description,
@@ -155,5 +187,7 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
             val mcc: String,
             val currency: String,
         )
+
+        private val accountInfoRegex = Regex("<code>(Account|Balance|Mono balance):\\s*(.+?)</code>")
     }
 }

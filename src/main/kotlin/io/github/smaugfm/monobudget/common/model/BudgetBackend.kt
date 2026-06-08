@@ -12,6 +12,7 @@ sealed class BudgetBackend {
     data class YNAB(
         override val token: String,
         val ynabBudgetId: String,
+        val matchExistingTransactions: Boolean = true,
     ) : BudgetBackend()
 
     @Serializable

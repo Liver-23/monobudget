@@ -20,4 +20,6 @@ data class MonobankWebhookResponseStatementItem(
     override val operationAmount =
         Amount(d.statementItem.operationAmount, d.statementItem.currencyCode)
     override val currency = d.statementItem.currencyCode
+    override val balanceAfterTransaction =
+        Amount(d.statementItem.balance, accountCurrency)
 }

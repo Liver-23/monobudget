@@ -14,10 +14,10 @@ import io.github.smaugfm.monobudget.ynab.model.YnabCategoryGroupWithCategories
 import io.github.smaugfm.monobudget.ynab.model.YnabPayee
 import io.github.smaugfm.monobudget.ynab.model.YnabPayeesResponse
 import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransaction
-import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransactionResponse
 import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransactionWrapper
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionResponse
+import io.github.smaugfm.monobudget.ynab.model.YnabTransactionsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -32,6 +32,7 @@ import io.ktor.http.contentType
 import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.util.url
+import kotlinx.datetime.LocalDate
 import org.koin.core.annotation.Single
 import kotlin.reflect.KFunction
 
@@ -92,7 +93,7 @@ class YnabApi(backend: YNAB) {
             val response = httpClient.get(url)
             val rawBody = response.body<String>()
             log.debug { "Raw YNAB getAccount response: $rawBody" }
-            kotlinx.serialization.json.Json.decodeFromString<YnabAccountResponse>(rawBody).data.account
+            json.decodeFromString<YnabAccountResponse>(rawBody).data.account
         }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
@@ -116,29 +117,33 @@ class YnabApi(backend: YNAB) {
 
     suspend fun createTransaction(transaction: YnabSaveTransaction): YnabTransactionDetail =
         catching(this::createTransaction) {
-            httpClient.post(buildUrl("budgets", budgetId, "transactions")) {
-                contentType(ContentType.Application.Json)
-                setBody(YnabSaveTransactionWrapper(transaction))
-            }.body<YnabSaveTransactionResponse>()
-        }.data.transaction
+            val response =
+                httpClient.post(buildUrl("budgets", budgetId, "transactions")) {
+                    contentType(ContentType.Application.Json)
+                    setBody(YnabSaveTransactionWrapper(transaction))
+                }
+            YnabResponseParser.parseCreatedTransaction(json, response.body<String>())
+        }
 
     suspend fun updateTransaction(
         transactionId: String,
         transaction: YnabSaveTransaction,
     ): YnabTransactionDetail =
         catching(this::updateTransaction) {
-            httpClient.put(
-                buildUrl(
-                    "budgets",
-                    budgetId,
-                    "transactions",
-                    transactionId,
-                ),
-            ) {
-                contentType(ContentType.Application.Json)
-                setBody(YnabSaveTransactionWrapper(transaction))
-            }.body<YnabTransactionResponse>()
-        }.data.transaction
+            val response =
+                httpClient.put(
+                    buildUrl(
+                        "budgets",
+                        budgetId,
+                        "transactions",
+                        transactionId,
+                    ),
+                ) {
+                    contentType(ContentType.Application.Json)
+                    setBody(YnabSaveTransactionWrapper(transaction))
+                }
+            YnabResponseParser.parseUpdatedTransaction(json, response.body<String>())
+        }
 
     suspend fun getTransaction(transactionId: String): YnabTransactionDetail =
         catching(this::getTransaction) {
@@ -151,4 +156,21 @@ class YnabApi(backend: YNAB) {
                 ),
             ).body<YnabTransactionResponse>()
         }.data.transaction
+
+    suspend fun getAccountTransactions(
+        accountId: String,
+        sinceDate: LocalDate,
+    ): List<YnabTransactionDetail> =
+        catching(this::getAccountTransactions) {
+            val requestUrl =
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = "api.ynab.com"
+                    parameters.append("access_token", token)
+                    parameters.append("since_date", sinceDate.toString())
+                    path("v1", "budgets", budgetId, "accounts", accountId, "transactions")
+                }
+            httpClient.get(requestUrl)
+                .body<YnabTransactionsResponse>()
+        }.data.transactions
 }
