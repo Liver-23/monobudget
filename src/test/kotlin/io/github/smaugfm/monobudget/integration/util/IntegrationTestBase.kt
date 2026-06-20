@@ -22,6 +22,7 @@ import io.github.smaugfm.monobudget.integration.TransactionsTest
 import io.github.smaugfm.monobudget.mono.MonoWebhookListener
 import io.github.smaugfm.monobudget.mono.MonoWebhookSettings
 import io.github.smaugfm.monobudget.setupKoinModules
+import io.github.smaugfm.monobudget.ynab.InMemoryYnabWatcherStateRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.excludeRecords
@@ -96,6 +97,7 @@ abstract class IntegrationTestBase : TestBase(), CoroutineScope {
         app.setupKoinModules(
             this@IntegrationTestBase,
             InMemoryStatementRetryRepository(),
+            InMemoryYnabWatcherStateRepository(),
             Settings.load(
                 Paths.get(
                     TransactionsTest::class.java.classLoader.getResource("test-settings.yml")!!.path,

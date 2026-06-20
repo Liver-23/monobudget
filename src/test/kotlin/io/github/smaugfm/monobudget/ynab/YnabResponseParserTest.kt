@@ -24,4 +24,18 @@ class YnabResponseParserTest {
             .prop(BudgetBackendException::userMessage)
             .isEqualTo("Account does not exist.")
     }
+
+    @Test
+    fun `throws BudgetBackendException for YNAB error response on get transaction`() {
+        val body =
+            """
+            {"error":{"id":"404","name":"not_found","detail":"Transaction not found."}}
+            """.trimIndent()
+
+        assertFailure {
+            YnabResponseParser.parseTransaction(json, body)
+        }.isInstanceOf(BudgetBackendException::class)
+            .prop(BudgetBackendException::userMessage)
+            .isEqualTo("Transaction not found.")
+    }
 }

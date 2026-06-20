@@ -81,6 +81,16 @@ sealed class ActionCallbackType : CallbackType() {
         }
     }
 
+    data class CancelCategoryPicker(override val transactionId: String) : ActionCallbackType() {
+        companion object {
+            fun button() =
+                InlineKeyboardButton(
+                    "❌ Cancel",
+                    callbackData = CancelCategoryPicker::class.simpleName!!,
+                )
+        }
+    }
+
     companion object {
         fun classFromCallbackData(callbackData: String?): KClass<out ActionCallbackType>? =
             when {
@@ -90,6 +100,7 @@ sealed class ActionCallbackType : CallbackType() {
                 callbackData.startsWith("${ChooseCategoryGroup::class.simpleName}#") ->
                     ChooseCategoryGroup::class
                 callbackData == BackToCategoryGroups::class.simpleName -> BackToCategoryGroups::class
+                callbackData == CancelCategoryPicker::class.simpleName -> CancelCategoryPicker::class
                 else ->
                     ActionCallbackType::class
                         .sealedSubclasses.find { callbackData == it.simpleName }

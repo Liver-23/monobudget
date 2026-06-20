@@ -22,11 +22,15 @@ private val log = KotlinLogging.logger {}
 class LunchmoneyTelegramCallbackHandler(
     private val api: LunchmoneyApi,
 ) : TelegramCallbackHandler<LunchmoneyTransaction>() {
-    override suspend fun updateTransaction(callbackType: TransactionUpdateType): LunchmoneyTransaction {
+    override suspend fun updateTransaction(
+        callbackType: TransactionUpdateType,
+        message: Message,
+    ): LunchmoneyTransaction {
         val txId = callbackType.transactionId.toLong()
 
         val updateTransaction =
             when (callbackType) {
+                is TransactionUpdateType.Approve -> error("Not supported for Lunchmoney")
                 is TransactionUpdateType.MakePayee -> error("Not supported for Lunchmoney")
                 is TransactionUpdateType.Unapprove ->
                     LunchmoneyUpdateTransaction(

@@ -4,11 +4,13 @@ import com.elbekd.bot.types.CallbackQuery
 import com.elbekd.bot.types.Message
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.BackToCategoryGroups
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CancelCategoryPicker
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryGroupPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategoryGroup
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
+import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Approve
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.MakePayee
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Unapprove
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType.Uncategorize
@@ -50,13 +52,13 @@ class CallbackQueryParser {
         message: Message,
     ): CallbackType? {
         val cls = CallbackType.classFromCallbackData(callbackData)
-        val payee = extractPayee(message) ?: return null
         val transactionId = extractTransactionId(message)
 
         return when (cls) {
             Uncategorize::class -> Uncategorize(transactionId)
             Unapprove::class -> Unapprove(transactionId)
-            MakePayee::class -> MakePayee(transactionId, payee)
+            Approve::class -> Approve(transactionId)
+            MakePayee::class -> MakePayee(transactionId, extractPayee(message) ?: return null)
             ChooseCategory::class -> ChooseCategory(transactionId)
             CategoryGroupPage::class ->
                 CategoryGroupPage(
@@ -73,6 +75,7 @@ class CallbackQueryParser {
                 CategoryPage(transactionId, groupId, page)
             }
             BackToCategoryGroups::class -> BackToCategoryGroups(transactionId)
+            CancelCategoryPicker::class -> CancelCategoryPicker(transactionId)
             UpdateCategory::class ->
                 UpdateCategory(
                     transactionId,

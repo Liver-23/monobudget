@@ -51,21 +51,19 @@ class YnabTransactionMessageFormatter(
     ): PressedButtons {
         val pressed = PressedButtons(callbackType)
 
-        if (transaction.cleared == YnabCleared.Uncleared) {
-            pressed(TransactionUpdateType.Unapprove::class)
-        }
-
         return pressed
     }
 
-    override fun getReplyKeyboard(pressed: PressedButtons) =
-        InlineKeyboardMarkup(
+    override fun buildReplyKeyboard(
+        transaction: YnabTransactionDetail,
+        pressed: PressedButtons,
+    ) = InlineKeyboardMarkup(
+        listOf(
             listOf(
-                listOf(
-                    TransactionUpdateType.Unapprove.button(pressed),
-                    ActionCallbackType.ChooseCategory.button(pressed),
-                    TransactionUpdateType.MakePayee.button(pressed),
-                ),
+                YnabApprovalButton.button(transaction, pressed),
+                ActionCallbackType.ChooseCategory.button(pressed),
+                TransactionUpdateType.MakePayee.button(pressed),
             ),
-        )
+        ),
+    )
 }

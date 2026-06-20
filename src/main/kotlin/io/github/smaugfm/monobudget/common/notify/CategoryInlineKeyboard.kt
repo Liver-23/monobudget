@@ -3,6 +3,7 @@ package io.github.smaugfm.monobudget.common.notify
 import com.elbekd.bot.types.InlineKeyboardButton
 import com.elbekd.bot.types.InlineKeyboardMarkup
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.BackToCategoryGroups
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CancelCategoryPicker
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryGroupPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategoryGroup
@@ -39,6 +40,8 @@ internal object CategoryInlineKeyboard {
             nextButton = { navPage -> CategoryGroupPage.button("Next ▶️", navPage) },
         )
 
+        rows.add(listOf(CancelCategoryPicker.button()))
+
         return InlineKeyboardMarkup(rows)
     }
 
@@ -74,7 +77,9 @@ internal object CategoryInlineKeyboard {
         return InlineKeyboardMarkup(rows)
     }
 
-    private fun buttonsToTwoColumnRows(buttons: List<InlineKeyboardButton>): MutableList<List<InlineKeyboardButton>> {
+    private fun buttonsToTwoColumnRows(
+        buttons: List<InlineKeyboardButton>,
+    ): MutableList<List<InlineKeyboardButton>> {
         val rows =
             buttons
                 .zipWithNext()

@@ -68,15 +68,17 @@ class LunchmoneyTransactionMessageFormatter(
         return pressed
     }
 
-    override fun getReplyKeyboard(pressed: PressedButtons) =
-        InlineKeyboardMarkup(
+    override fun buildReplyKeyboard(
+        transaction: LunchmoneyTransaction,
+        pressed: PressedButtons,
+    ) = InlineKeyboardMarkup(
+        listOf(
             listOf(
-                listOf(
-                    TransactionUpdateType.Unapprove.button(pressed),
-                    ActionCallbackType.ChooseCategory.button(pressed),
-                ),
+                TransactionUpdateType.Unapprove.button(pressed),
+                ActionCallbackType.ChooseCategory.button(pressed),
             ),
-        )
+        ),
+    )
 
     companion object {
         fun constructTransactionsQuickUrl(

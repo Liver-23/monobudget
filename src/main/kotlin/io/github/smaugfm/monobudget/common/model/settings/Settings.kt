@@ -19,6 +19,7 @@ data class Settings(
     val mcc: MccOverrideSettings = MccOverrideSettings(),
     val retry: RetrySettings = RetrySettings(),
     val transfer: List<OtherBanksTransferSettings> = emptyList(),
+    val ynabBudgetWatcher: YnabBudgetWatcherSettings? = null,
 ) {
     companion object {
         fun load(path: Path): Settings = load(File(path.toString()).readText())

@@ -10,6 +10,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.category.CategoryService
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.BackToCategoryGroups
+import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CancelCategoryPicker
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryGroupPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.CategoryPage
 import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.ChooseCategory
@@ -17,6 +18,7 @@ import io.github.smaugfm.monobudget.common.model.callback.ActionCallbackType.Cho
 import io.github.smaugfm.monobudget.common.model.callback.CallbackType
 import io.github.smaugfm.monobudget.common.model.callback.TransactionUpdateType
 import io.github.smaugfm.monobudget.common.model.settings.MultipleAccountSettings
+import io.github.smaugfm.monobudget.common.model.settings.Settings
 import io.github.smaugfm.monobudget.common.statement.lifecycle.StatementEvents
 import io.github.smaugfm.monobudget.common.transaction.TransactionMessageFormatter
 import org.koin.core.component.KoinComponent
@@ -29,7 +31,10 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
     private val telegram: TelegramApi by inject()
     private val formatter: TransactionMessageFormatter<TTransaction> by inject()
     private val monoSettings: MultipleAccountSettings by inject()
-    private val telegramChatIds = monoSettings.telegramChatIds
+    private val settings: Settings by inject()
+    private val telegramChatIds by lazy {
+        (monoSettings.telegramChatIds + listOfNotNull(settings.ynabBudgetWatcher?.telegramChatId)).toSet()
+    }
     private val statementEvents by inject<StatementEvents>()
     private val callbackParser = CallbackQueryParser()
 
@@ -74,7 +79,20 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
             is CategoryPage ->
                 showCategoryKeyboard(message, callbackType.groupId, page = callbackType.page)
             is BackToCategoryGroups -> showGroupKeyboard(message, page = 0)
+            is CancelCategoryPicker -> restoreMainKeyboard(message, callbackType.transactionId)
         }
+    }
+
+    private suspend fun restoreMainKeyboard(
+        message: Message,
+        transactionId: String,
+    ) {
+        val transaction = transactionForReplyKeyboard(message, transactionId) ?: return
+        telegram.editKeyboard(
+            ChatId.IntegerId(message.chat.id),
+            message.messageId,
+            replyKeyboardForTransaction(message, transaction),
+        )
     }
 
     private suspend fun showGroupKeyboard(
@@ -82,7 +100,7 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         page: Int,
     ) {
         val groups =
-            categoryService.categoryGroups().map { group ->
+            categoryGroupsForMessage(message).map { group ->
                 group.id to group.name
             }
         telegram.editKeyboard(
@@ -98,7 +116,7 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         page: Int,
     ) {
         val categories =
-            categoryService.categoryGroups()
+            categoryGroupsForMessage(message)
                 .find { it.id == groupId }
                 ?.categories
                 ?: emptyList()
@@ -113,9 +131,9 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         callbackType: TransactionUpdateType,
         message: Message,
     ) {
-        val updatedTransaction = updateTransaction(callbackType)
+        val updatedTransaction = updateTransaction(callbackType, message)
         val updatedText = updateHTMLStatementMessage(updatedTransaction, message)
-        val updatedMarkup = formatter.getReplyKeyboard(updatedTransaction)
+        val updatedMarkup = replyKeyboardForTransaction(message, updatedTransaction)
 
         if (stripHTMLTagsFromMessage(updatedText) != message.text ||
             updatedMarkup != message.replyMarkup
@@ -147,12 +165,27 @@ abstract class TelegramCallbackHandler<TTransaction> : KoinComponent {
         }
     }
 
-    protected abstract suspend fun updateTransaction(callbackType: TransactionUpdateType): TTransaction
+    protected abstract suspend fun updateTransaction(
+        callbackType: TransactionUpdateType,
+        message: Message,
+    ): TTransaction
 
     protected abstract suspend fun updateHTMLStatementMessage(
         updatedTransaction: TTransaction,
         oldMessage: Message,
     ): String
+
+    protected open suspend fun categoryGroupsForMessage(message: Message) = categoryService.categoryGroups()
+
+    protected open suspend fun transactionForReplyKeyboard(
+        message: Message,
+        transactionId: String,
+    ): TTransaction? = null
+
+    protected open fun replyKeyboardForTransaction(
+        message: Message,
+        transaction: TTransaction,
+    ): InlineKeyboardMarkup = formatter.getReplyKeyboard(transaction)
 
     private fun stripHTMLTagsFromMessage(messageText: String): String {
         val replaceHtml = Regex("<.*?>")

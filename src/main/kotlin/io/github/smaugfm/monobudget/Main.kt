@@ -19,7 +19,9 @@ import io.github.smaugfm.monobudget.lunchmoney.LunchmoneyModule
 import io.github.smaugfm.monobudget.mono.MonoApi
 import io.github.smaugfm.monobudget.mono.MonoModule
 import io.github.smaugfm.monobudget.mono.MonoWebhookSettings
+import io.github.smaugfm.monobudget.ynab.JacksonFileYnabWatcherStateRepository
 import io.github.smaugfm.monobudget.ynab.YnabModule
+import io.github.smaugfm.monobudget.ynab.YnabWatcherStateRepository
 import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransaction
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +56,10 @@ fun main(args: Array<String>) {
         JacksonFileStatementRetryRepository(
             Paths.get(env["RETRIES_FILE"] ?: "retries.json"),
         )
+    val ynabWatcherStateRepository =
+        JacksonFileYnabWatcherStateRepository(
+            Paths.get(env["YNAB_WATCHER_STATE_FILE"] ?: "ynab-watcher-state.json"),
+        )
     val budgetBackend = settings.budgetBackend
     val webhookSettings = MonoWebhookSettings(setWebhook, monoWebhookUrl, webhookPort)
 
@@ -62,7 +68,13 @@ fun main(args: Array<String>) {
 
     runBlocking {
         startKoin {
-            setupKoinModules(this@runBlocking, jsonRetryRepository, settings, webhookSettings)
+            setupKoinModules(
+                this@runBlocking,
+                jsonRetryRepository,
+                ynabWatcherStateRepository,
+                settings,
+                webhookSettings,
+            )
         }
 
         when (budgetBackend) {
@@ -75,11 +87,14 @@ fun main(args: Array<String>) {
 fun KoinApplication.setupKoinModules(
     coroutineScope: CoroutineScope,
     retryRepository: StatementRetryRepository,
+    ynabWatcherStateRepository: YnabWatcherStateRepository,
     settings: Settings,
     webhookSettings: MonoWebhookSettings,
 ) {
     printLogger(Level.ERROR)
-    modules(runtimeModule(coroutineScope, retryRepository, settings, webhookSettings))
+    modules(
+        runtimeModule(coroutineScope, retryRepository, ynabWatcherStateRepository, settings, webhookSettings),
+    )
     modules(MonoModule().module)
     modules(CommonModule().module)
     modules(
@@ -93,6 +108,7 @@ fun KoinApplication.setupKoinModules(
 private fun runtimeModule(
     coroutineScope: CoroutineScope,
     retryRepository: StatementRetryRepository,
+    ynabWatcherStateRepository: YnabWatcherStateRepository,
     settings: Settings,
     webhookSettings: MonoWebhookSettings,
 ) = module {
@@ -103,7 +119,9 @@ private fun runtimeModule(
     } bind BudgetBackend::class
 
     single { webhookSettings }
+    single { settings }
     single { retryRepository }
+    single { ynabWatcherStateRepository } bind YnabWatcherStateRepository::class
     single { settings.mcc }
     single { settings.bot }
     single { settings.accounts }

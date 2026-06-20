@@ -12,6 +12,10 @@ sealed class TransactionUpdateType : CallbackType() {
         companion object : ButtonBase(Unapprove::class)
     }
 
+    data class Approve(override val transactionId: String) : TransactionUpdateType() {
+        companion object : ButtonBase(Approve::class)
+    }
+
     data class MakePayee(override val transactionId: String, val payee: String) : TransactionUpdateType() {
         companion object : ButtonBase(MakePayee::class)
     }

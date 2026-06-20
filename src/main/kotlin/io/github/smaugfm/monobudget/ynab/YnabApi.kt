@@ -16,7 +16,6 @@ import io.github.smaugfm.monobudget.ynab.model.YnabPayeesResponse
 import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransaction
 import io.github.smaugfm.monobudget.ynab.model.YnabSaveTransactionWrapper
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
-import io.github.smaugfm.monobudget.ynab.model.YnabTransactionResponse
 import io.github.smaugfm.monobudget.ynab.model.YnabTransactionsResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -80,13 +79,16 @@ class YnabApi(backend: YNAB) {
             }
         }
 
-    suspend fun getBudget(budgetId: String): YnabBudgetDetailShort =
+    suspend fun getBudget(budgetId: String = this.budgetId): YnabBudgetDetailShort =
         catching(this::getBudget) {
             httpClient.get(buildUrl("budgets", budgetId))
                 .body<YnabBudgetDetailResponseShort>()
         }.data.budget
 
-    suspend fun getAccount(accountId: String): YnabAccount =
+    suspend fun getAccount(
+        accountId: String,
+        budgetId: String = this.budgetId,
+    ): YnabAccount =
         catching(this::getAccount) {
             val url = buildUrl("budgets", budgetId, "accounts", accountId)
             log.debug { "YNAB getAccount request URL: $url" }
@@ -97,19 +99,19 @@ class YnabApi(backend: YNAB) {
         }
 
     @Suppress("MemberVisibilityCanBePrivate", "unused")
-    suspend fun getAccounts(): List<YnabAccount> =
+    suspend fun getAccounts(budgetId: String = this.budgetId): List<YnabAccount> =
         catching(this::getAccounts) {
             httpClient.get(buildUrl("budgets", budgetId, "accounts"))
                 .body<YnabAccountsResponse>()
         }.data.accounts
 
-    suspend fun getPayees(): List<YnabPayee> =
+    suspend fun getPayees(budgetId: String = this.budgetId): List<YnabPayee> =
         catchingNoLogging(this::getPayees) {
             httpClient.get(buildUrl("budgets", budgetId, "payees"))
                 .body<YnabPayeesResponse>()
         }.data.payees
 
-    suspend fun getCategoryGroups(): List<YnabCategoryGroupWithCategories> =
+    suspend fun getCategoryGroups(budgetId: String = this.budgetId): List<YnabCategoryGroupWithCategories> =
         catching(this::getCategoryGroups) {
             httpClient.get(buildUrl("budgets", budgetId, "categories"))
                 .body<YnabCategoriesResponse>()
@@ -128,6 +130,7 @@ class YnabApi(backend: YNAB) {
     suspend fun updateTransaction(
         transactionId: String,
         transaction: YnabSaveTransaction,
+        budgetId: String = this.budgetId,
     ): YnabTransactionDetail =
         catching(this::updateTransaction) {
             val response =
@@ -145,21 +148,27 @@ class YnabApi(backend: YNAB) {
             YnabResponseParser.parseUpdatedTransaction(json, response.body<String>())
         }
 
-    suspend fun getTransaction(transactionId: String): YnabTransactionDetail =
+    suspend fun getTransaction(
+        transactionId: String,
+        budgetId: String = this.budgetId,
+    ): YnabTransactionDetail =
         catching(this::getTransaction) {
-            httpClient.get(
-                buildUrl(
-                    "budgets",
-                    budgetId,
-                    "transactions",
-                    transactionId,
-                ),
-            ).body<YnabTransactionResponse>()
-        }.data.transaction
+            val response =
+                httpClient.get(
+                    buildUrl(
+                        "budgets",
+                        budgetId,
+                        "transactions",
+                        transactionId,
+                    ),
+                )
+            YnabResponseParser.parseTransaction(json, response.body<String>())
+        }
 
     suspend fun getAccountTransactions(
         accountId: String,
         sinceDate: LocalDate,
+        budgetId: String = this.budgetId,
     ): List<YnabTransactionDetail> =
         catching(this::getAccountTransactions) {
             val requestUrl =
@@ -173,4 +182,33 @@ class YnabApi(backend: YNAB) {
             httpClient.get(requestUrl)
                 .body<YnabTransactionsResponse>()
         }.data.transactions
+
+    suspend fun getDeltaTransactions(
+        budgetId: String,
+        lastKnowledgeOfServer: Int?,
+    ): YnabDeltaTransactions =
+        catching(this::getDeltaTransactions) {
+            val requestUrl =
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = "api.ynab.com"
+                    parameters.append("access_token", token)
+                    lastKnowledgeOfServer?.let {
+                        parameters.append("last_knowledge_of_server", it.toString())
+                    }
+                    path("v1", "budgets", budgetId, "transactions")
+                }
+            val response = httpClient.get(requestUrl).body<YnabTransactionsResponse>()
+            YnabDeltaTransactions(
+                transactions = response.data.transactions,
+                serverKnowledge =
+                    response.data.serverKnowledge
+                        ?: error("YNAB delta response missing server_knowledge for budget $budgetId"),
+            )
+        }
 }
+
+data class YnabDeltaTransactions(
+    val transactions: List<YnabTransactionDetail>,
+    val serverKnowledge: Int,
+)

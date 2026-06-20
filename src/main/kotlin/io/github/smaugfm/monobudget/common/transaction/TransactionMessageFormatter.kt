@@ -42,7 +42,7 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
 
     fun getReplyKeyboard(transaction: TTransaction): InlineKeyboardMarkup {
         val pressed = getReplyKeyboardPressedButtons(transaction)
-        return getReplyKeyboard(pressed)
+        return buildReplyKeyboard(transaction, pressed)
     }
 
     abstract fun shouldNotify(transaction: TTransaction): Boolean
@@ -52,7 +52,10 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
         callbackType: TransactionUpdateType? = null,
     ): PressedButtons
 
-    protected abstract fun getReplyKeyboard(pressed: PressedButtons): InlineKeyboardMarkup
+    protected abstract fun buildReplyKeyboard(
+        transaction: TTransaction,
+        pressed: PressedButtons,
+    ): InlineKeyboardMarkup
 
     protected abstract suspend fun formatHTMLStatementMessage(
         statementItem: StatementItem,
@@ -167,10 +170,14 @@ abstract class TransactionMessageFormatter<TTransaction> : KoinComponent {
             )
         }
 
-        fun extractTransactionId(message: Message): String =
-            message.text!!.let {
-                it.substring(it.lastIndexOf('\n')).trim()
-            }
+        fun extractTransactionId(message: Message): String {
+            val text = message.text!!
+            val lastLine = text.substring(text.lastIndexOf('\n')).trim()
+            return lastLine
+                .removePrefix("<pre>")
+                .removeSuffix("</pre>")
+                .trim()
+        }
 
         fun extractPayee(message: Message): String? {
             val text = message.text!!

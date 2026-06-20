@@ -12,6 +12,7 @@ import io.github.smaugfm.monobudget.common.transaction.NewTransactionFactory
 import io.github.smaugfm.monobudget.lunchmoney.LunchmoneyNewTransactionFactory
 import io.github.smaugfm.monobudget.mono.MonoWebhookSettings
 import io.github.smaugfm.monobudget.setupKoinModules
+import io.github.smaugfm.monobudget.ynab.InMemoryYnabWatcherStateRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.datetime.Clock
 import org.koin.core.context.startKoin
@@ -54,6 +55,7 @@ class ImporterApplication(private val source: ImporterStatementSource) :
                 setupKoinModules(
                     coroutineScope,
                     InMemoryStatementRetryRepository(),
+                    InMemoryYnabWatcherStateRepository(),
                     settings,
                     MonoWebhookSettings(false, URI.create("none://none"), 0),
                 )

@@ -19,6 +19,11 @@ internal object YnabResponseParser {
     fun parseUpdatedTransaction(
         json: Json,
         rawBody: String,
+    ): YnabTransactionDetail = parseTransaction(json, rawBody)
+
+    fun parseTransaction(
+        json: Json,
+        rawBody: String,
     ): YnabTransactionDetail {
         parseError(json, rawBody)?.let { throw it }
         return json.decodeFromString<YnabTransactionResponse>(rawBody).data.transaction
