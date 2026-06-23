@@ -6,6 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.smaugfm.monobudget.common.model.settings.Settings
 import io.github.smaugfm.monobudget.common.model.settings.YnabBudgetWatcherSettings
 import io.github.smaugfm.monobudget.common.notify.TelegramApi
+import io.github.smaugfm.monobudget.ynab.model.YnabTransactionDetail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import org.koin.core.annotation.Single
+import java.util.Currency
 
 private val log = KotlinLogging.logger {}
 
@@ -80,37 +82,89 @@ class YnabBudgetWatcher(
         }
 
         val currency = budgetDataService.budgetCurrency(watcherSettings.budgetId)
-        val newTransactions =
-            delta.transactions
-                .asSequence()
-                .filterNot { it.deleted }
-                .filterNot { it.accountId in watcherSettings.excludedAccountIds }
-                .filterNot { it.id in existingState.notifiedTransactionIds }
-                .toList()
+        val newTransactions = filterNewTransactions(watcherSettings, delta, existingState)
+        val notifyResult = sendNewNotifications(watcherSettings, newTransactions, currency, existingState)
+        finalizePollState(existingState, delta, newTransactions, notifyResult)
 
-        newTransactions.forEach { transaction ->
-            val message = messageFormatter.format(watcherSettings, transaction, currency)
-            telegramApi.sendMessage(
-                chatId = ChatId.IntegerId(watcherSettings.telegramChatId),
-                text = message.message,
-                parseMode = ParseMode.Html,
-                disableNotification = !message.notifyTelegramApp,
-                replyMarkup = message.markup,
-            )
-        }
-
-        val updatedNotifiedIds = (existingState.notifiedTransactionIds + delta.transactions.map { it.id }).toSet()
-        stateRepo.save(
-            existingState.copy(
-                serverKnowledge = delta.serverKnowledge,
-                notifiedTransactionIds = updatedNotifiedIds,
-            ),
-        )
-
-        if (newTransactions.isNotEmpty()) {
+        if (notifyResult.sentCount > 0) {
             log.info {
-                "YNAB watcher: sent ${newTransactions.size} new notifications for budget ${watcherSettings.budgetId}"
+                "YNAB watcher: sent ${notifyResult.sentCount} new notifications for budget ${watcherSettings.budgetId}"
             }
         }
     }
+
+    private fun filterNewTransactions(
+        watcherSettings: YnabBudgetWatcherSettings,
+        delta: YnabDeltaTransactions,
+        existingState: YnabWatcherState,
+    ) = delta.transactions
+        .asSequence()
+        .filterNot { it.deleted }
+        .filterNot { it.accountId in watcherSettings.excludedAccountIds }
+        .filterNot { it.id in existingState.notifiedTransactionIds }
+        .toList()
+
+    private suspend fun sendNewNotifications(
+        watcherSettings: YnabBudgetWatcherSettings,
+        newTransactions: List<YnabTransactionDetail>,
+        currency: Currency,
+        existingState: YnabWatcherState,
+    ): NotifyResult {
+        var notifiedIds = existingState.notifiedTransactionIds
+        var sentCount = 0
+        var notifyFailed = false
+
+        for (transaction in newTransactions) {
+            try {
+                val message = messageFormatter.format(watcherSettings, transaction, currency)
+                telegramApi.sendMessage(
+                    chatId = ChatId.IntegerId(watcherSettings.telegramChatId),
+                    text = message.message,
+                    parseMode = ParseMode.Html,
+                    disableNotification = !message.notifyTelegramApp,
+                    replyMarkup = message.markup,
+                )
+                notifiedIds = notifiedIds + transaction.id
+                sentCount++
+                stateRepo.save(
+                    existingState.copy(
+                        serverKnowledge = existingState.serverKnowledge,
+                        notifiedTransactionIds = notifiedIds,
+                    ),
+                )
+            } catch (e: Throwable) {
+                notifyFailed = true
+                log.error(e) {
+                    "YNAB watcher: failed to notify for transaction ${transaction.id} " +
+                        "in budget ${watcherSettings.budgetId}"
+                }
+            }
+        }
+
+        return NotifyResult(notifiedIds, sentCount, notifyFailed)
+    }
+
+    private suspend fun finalizePollState(
+        existingState: YnabWatcherState,
+        delta: YnabDeltaTransactions,
+        newTransactions: List<YnabTransactionDetail>,
+        notifyResult: NotifyResult,
+    ) {
+        if (newTransactions.isNotEmpty() && notifyResult.notifyFailed) {
+            return
+        }
+
+        stateRepo.save(
+            existingState.copy(
+                serverKnowledge = delta.serverKnowledge,
+                notifiedTransactionIds = notifyResult.notifiedIds + delta.transactions.map { it.id },
+            ),
+        )
+    }
+
+    private data class NotifyResult(
+        val notifiedIds: Set<String>,
+        val sentCount: Int,
+        val notifyFailed: Boolean,
+    )
 }

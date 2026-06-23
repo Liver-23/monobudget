@@ -37,4 +37,7 @@ enum class YnabAccountType {
 
     @SerialName("mortgage")
     Mortgage,
+
+    @SerialName("personalLoan")
+    PersonalLoan,
 }
