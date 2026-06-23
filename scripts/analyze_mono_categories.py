@@ -63,11 +63,13 @@ def load_accounts(settings_path: Path) -> list[dict]:
         token = re.search(r'token:\s*"([^"]+)"', block)
         alias = re.search(r'alias:\s*"([^"]+)"', block)
         if account_id and token and alias:
-            accounts.append({
-                "id": account_id.group(1),
-                "token": token.group(1),
-                "alias": alias.group(1),
-            })
+            accounts.append(
+                {
+                    "id": account_id.group(1),
+                    "token": token.group(1),
+                    "alias": alias.group(1),
+                }
+            )
 
     return accounts
 
@@ -80,7 +82,9 @@ def fetch_statement(token: str, account_id: str, t_from: int, t_to: int) -> list
         return json.load(resp)
 
 
-def fetch_all_transactions(accounts: list[dict], months: int) -> tuple[list[dict], list[str]]:
+def fetch_all_transactions(
+    accounts: list[dict], months: int
+) -> tuple[list[dict], list[str]]:
     now = datetime.now(timezone.utc)
     date_from = now - timedelta(days=months * 30)
     t_from_base = int(date_from.timestamp())
@@ -101,7 +105,9 @@ def fetch_all_transactions(accounts: list[dict], months: int) -> tuple[list[dict
             label = f"{acc['alias']} [{datetime.fromtimestamp(chunk_from).date()}]"
             for attempt in range(3):
                 try:
-                    txns = fetch_statement(acc["token"], acc["id"], chunk_from, chunk_to)
+                    txns = fetch_statement(
+                        acc["token"], acc["id"], chunk_from, chunk_to
+                    )
                     for tx in txns:
                         tx["_account"] = acc["alias"]
                         tx["_account_id"] = acc["id"]
@@ -172,8 +178,13 @@ def classify_transaction(
             for pattern in cat_def.get("payee_patterns", []):
                 if pattern_matches(desc, pattern):
                     return _result(
-                        group_name, cat_name, "payee", pattern,
-                        is_expense, cat_def, txn,
+                        group_name,
+                        cat_name,
+                        "payee",
+                        pattern,
+                        is_expense,
+                        cat_def,
+                        txn,
                     )
 
             cat_mccs = cat_def.get("mcc", [])
@@ -181,50 +192,82 @@ def classify_transaction(
                 continue  # mcc-only match only when no payee patterns defined
             if mcc in cat_mccs and not cat_def.get("payee_patterns"):
                 return _result(
-                    group_name, cat_name, "mcc", str(mcc),
-                    is_expense, cat_def, txn,
+                    group_name,
+                    cat_name,
+                    "mcc",
+                    str(mcc),
+                    is_expense,
+                    cat_def,
+                    txn,
                 )
 
     # Pass 2: MCC fallback
     mcc_fb = mapping.get("mcc_fallback", {}).get(mcc)
     if mcc_fb:
         group_def = next(
-            (g for g in mapping["groups"] if g["name"] == mcc_fb["group"]), None,
+            (g for g in mapping["groups"] if g["name"] == mcc_fb["group"]),
+            None,
         )
         is_expense = group_def.get("is_expense", True) if group_def else True
         return _result(
-            mcc_fb["group"], mcc_fb["category"], "mcc_fallback", str(mcc),
-            is_expense, {}, txn,
+            mcc_fb["group"],
+            mcc_fb["category"],
+            "mcc_fallback",
+            str(mcc),
+            is_expense,
+            {},
+            txn,
         )
 
     # Pass 3: MCC group type fallback
     type_fb = mapping.get("mcc_group_type_fallback", {}).get(mcc_group_type)
     if type_fb:
         group_def = next(
-            (g for g in mapping["groups"] if g["name"] == type_fb["group"]), None,
+            (g for g in mapping["groups"] if g["name"] == type_fb["group"]),
+            None,
         )
         is_expense = group_def.get("is_expense", True) if group_def else True
         return _result(
-            type_fb["group"], type_fb["category"], "mcc_group_type", mcc_group_type,
-            is_expense, {}, txn,
+            type_fb["group"],
+            type_fb["category"],
+            "mcc_group_type",
+            mcc_group_type,
+            is_expense,
+            {},
+            txn,
         )
 
     # Pass 4: unmatched MCC 4829 transfers
     if mcc == 4829:
         return _result(
-            "Transfers", "Other P2P", "mcc", "4829",
-            False, {}, txn,
+            "Transfers",
+            "Other P2P",
+            "mcc",
+            "4829",
+            False,
+            {},
+            txn,
         )
 
     return _result(
-        "Other / Review", desc[:40] or "Unknown", "unmatched", "",
-        True, {}, txn,
+        "Other / Review",
+        desc[:40] or "Unknown",
+        "unmatched",
+        "",
+        True,
+        {},
+        txn,
     )
 
 
 def _result(
-    group: str, category: str, matched_by: str, matched_value: str,
-    is_expense: bool, cat_def: dict, txn: dict,
+    group: str,
+    category: str,
+    matched_by: str,
+    matched_value: str,
+    is_expense: bool,
+    cat_def: dict,
+    txn: dict,
 ) -> dict:
     return {
         "group": group,
@@ -249,10 +292,18 @@ def build_report(
     errors: list[str],
     period: str,
 ) -> dict:
-    by_group: dict = defaultdict(lambda: {"count": 0, "total": 0.0, "categories": Counter()})
-    by_payee: dict = defaultdict(lambda: {
-        "count": 0, "total": 0.0, "group": "", "category": "", "needs_review": False,
-    })
+    by_group: dict = defaultdict(
+        lambda: {"count": 0, "total": 0.0, "categories": Counter()}
+    )
+    by_payee: dict = defaultdict(
+        lambda: {
+            "count": 0,
+            "total": 0.0,
+            "group": "",
+            "category": "",
+            "needs_review": False,
+        }
+    )
 
     expense_total = 0.0
     expense_count = 0
@@ -341,14 +392,25 @@ def render_markdown(report: dict) -> str:
             lines.append(f"- {e}")
         lines.append("")
 
-    lines += ["## Group summary", "", "| Group | Total UAH | Txns | Categories |", "|-------|-----------|------|--------------|"]
+    lines += [
+        "## Group summary",
+        "",
+        "| Group | Total UAH | Txns | Categories |",
+        "|-------|-----------|------|--------------|",
+    ]
     for g in report["group_summary"]:
         cats = ", ".join(f"{c['name']} ({c['count']})" for c in g["categories"][:5])
-        lines.append(f"| {g['group']} | {g['total_uah']:,.0f} | {g['count']} | {cats} |")
+        lines.append(
+            f"| {g['group']} | {g['total_uah']:,.0f} | {g['count']} | {cats} |"
+        )
     lines.append("")
 
-    lines += ["## Payee → category mapping", "", "| Payee | Group | Category | Total UAH | Txns | Review? |",
-              "|-------|-------|----------|-----------|------|---------|"]
+    lines += [
+        "## Payee → category mapping",
+        "",
+        "| Payee | Group | Category | Total UAH | Txns | Review? |",
+        "|-------|-------|----------|-----------|------|---------|",
+    ]
     for p in report["payee_mapping"][:60]:
         review = "yes" if p["needs_manual_review"] else ""
         payee = p["payee"][:40].replace("|", "/")
@@ -360,7 +422,9 @@ def render_markdown(report: dict) -> str:
     if report["unmatched"]:
         lines += ["## Unmatched (needs review)", ""]
         for c in sorted(report["unmatched"], key=lambda x: -x["amount_uah"])[:20]:
-            lines.append(f"- {c['description']} — {c['amount_uah']:.0f} UAH (MCC {c['mcc']})")
+            lines.append(
+                f"- {c['description']} — {c['amount_uah']:.0f} UAH (MCC {c['mcc']})"
+            )
         lines.append("")
 
     lines += [
@@ -376,9 +440,15 @@ def render_markdown(report: dict) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Analyze Mono transactions and suggest categories")
-    parser.add_argument("--months", type=int, default=3, help="Months of history to fetch")
-    parser.add_argument("--skip-fetch", action="store_true", help="Use cached mono-txns-cache.json")
+    parser = argparse.ArgumentParser(
+        description="Analyze Mono transactions and suggest categories"
+    )
+    parser.add_argument(
+        "--months", type=int, default=3, help="Months of history to fetch"
+    )
+    parser.add_argument(
+        "--skip-fetch", action="store_true", help="Use cached mono-txns-cache.json"
+    )
     args = parser.parse_args()
 
     mapping = load_mapping(MAPPING_PATH)
@@ -415,8 +485,12 @@ def main() -> None:
     REPORT_MD.write_text(md, encoding="utf-8")
     print(f"Wrote {REPORT_MD}")
 
-    print(f"\nExpense total: {report['expense_total_uah']:,.0f} UAH across {report['expense_count']} txns")
-    print(f"Groups: {len(report['group_summary'])}, Payees mapped: {len(report['payee_mapping'])}")
+    print(
+        f"\nExpense total: {report['expense_total_uah']:,.0f} UAH across {report['expense_count']} txns"
+    )
+    print(
+        f"Groups: {len(report['group_summary'])}, Payees mapped: {len(report['payee_mapping'])}"
+    )
     if report["unmatched"]:
         print(f"Unmatched: {len(report['unmatched'])} txns")
     if report["needs_manual_review"]:

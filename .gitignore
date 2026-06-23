@@ -12,6 +12,7 @@ retries.json
 mono-txns-cache.json
 mono-category-report.json
 mono-category-report.md
+ynab-watcher-state.json
 docker-compose.yml
 
 __pycache__/
