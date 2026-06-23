@@ -3,6 +3,8 @@ out/
 .gradle/
 .idea/misc.xml
 .idea/**/*.iml
+.cursor/
+.kotlin/
 .env
 
 settings*.json
